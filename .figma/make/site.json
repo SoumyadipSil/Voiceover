@@ -1,0 +1,10 @@
+{
+  "description": "Transform scripts into high-quality AI voiceovers in seconds, perfect for faceless YouTube creators seeking efficient content production.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
