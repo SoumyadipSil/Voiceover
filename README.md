@@ -23,6 +23,7 @@ Voiceover turns a script into polished narration with a focused creator workflow
 - Vite
 - Tailwind CSS v4
 - WebGL shader background
+- Client-side routing with React Router
 - pnpm
 
 ## Getting Started
@@ -89,6 +90,24 @@ src/
 ## Current Status
 
 This is a front-end prototype. Authentication, voice generation, downloads, billing, and account actions currently use local state and sample data. A backend, database, and production voice-generation service are not connected yet.
+
+## Routes
+
+The app currently exposes these client-side routes:
+
+| Route | Description |
+| --- | --- |
+| `/` | Public landing page |
+| `/login` | Login screen |
+| `/signup` | Signup screen |
+| `/dashboard` | Voiceover workspace |
+| `/history` | Generation history |
+| `/billing` | Plans and usage |
+| `/settings` | Account settings |
+
+Dashboard routes use the demo authentication state. Complete the signup or login flow first, then open the authenticated route.
+
+When deploying to a static host, configure a rewrite so unknown paths serve `index.html`. This is required for browser refreshes on routes such as `/dashboard` and `/settings`.
 
 ## Design References
 

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation, useNavigate, useOutletContext } from 'react-router-dom'
 import Landing from './pages/Landing'
 import Auth from './pages/Auth'
 import Dashboard from './pages/Dashboard'
@@ -8,10 +9,27 @@ import Settings from './pages/Settings'
 import Sidebar from './components/Sidebar'
 import PaywallModal from './components/PaywallModal'
 
-type Page = 'landing' | 'login' | 'signup' | 'dashboard' | 'history' | 'billing' | 'settings'
+type AppPage = 'dashboard' | 'history' | 'billing' | 'settings'
+type AppShellContext = { onShowPaywall: () => void }
 
-function AppShell({ initialPage }: { initialPage: 'dashboard' | 'history' | 'billing' | 'settings' }) {
-  const [currentPage, setCurrentPage] = useState<'dashboard' | 'history' | 'billing' | 'settings'>(initialPage)
+function ProtectedRoute({ authed }: { authed: boolean }) {
+  return authed ? <Outlet /> : <Navigate to="/" replace />
+}
+
+function DashboardRoute() {
+  const { onShowPaywall } = useOutletContext<AppShellContext>()
+  return <Dashboard onShowPaywall={onShowPaywall} />
+}
+
+function BillingRoute() {
+  const { onShowPaywall } = useOutletContext<AppShellContext>()
+  return <Billing onUpgrade={onShowPaywall} />
+}
+
+function AppShell() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const currentPage = location.pathname.slice(1) as AppPage
   const [showPaywall, setShowPaywall] = useState(false)
 
   const usagePercent = 0
@@ -22,7 +40,7 @@ function AppShell({ initialPage }: { initialPage: 'dashboard' | 'history' | 'bil
     <div className="min-h-screen flex" style={{ background: '#090A0F' }}>
       <Sidebar
         currentPage={currentPage}
-        onNavigate={p => setCurrentPage(p as 'dashboard' | 'history' | 'billing' | 'settings')}
+        onNavigate={page => navigate(`/${page}`)}
         usagePercent={usagePercent}
         minutesLeft={minutesLeft}
         totalMinutes={totalMinutes}
@@ -62,7 +80,7 @@ function AppShell({ initialPage }: { initialPage: 'dashboard' | 'history' | 'bil
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold cursor-pointer"
               style={{ background: 'rgba(0,210,223,0.15)', color: '#00d2df', border: '1px solid rgba(0,210,223,0.2)' }}
-              onClick={() => setCurrentPage('settings')}
+              onClick={() => navigate('/settings')}
             >
               R
             </div>
@@ -71,14 +89,7 @@ function AppShell({ initialPage }: { initialPage: 'dashboard' | 'history' | 'bil
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto">
-          {currentPage === 'dashboard' && (
-            <Dashboard onShowPaywall={() => setShowPaywall(true)} />
-          )}
-          {currentPage === 'history' && <History />}
-          {currentPage === 'billing' && (
-            <Billing onUpgrade={() => setShowPaywall(true)} />
-          )}
-          {currentPage === 'settings' && <Settings />}
+          <Outlet context={{ onShowPaywall: () => setShowPaywall(true) }} />
         </main>
       </div>
 
@@ -87,7 +98,7 @@ function AppShell({ initialPage }: { initialPage: 'dashboard' | 'history' | 'bil
           onClose={() => setShowPaywall(false)}
           onUpgrade={() => {
             setShowPaywall(false)
-            setCurrentPage('billing')
+            navigate('/billing')
           }}
         />
       )}
@@ -95,31 +106,59 @@ function AppShell({ initialPage }: { initialPage: 'dashboard' | 'history' | 'bil
   )
 }
 
-export default function App() {
-  const [page, setPage] = useState<Page>('landing')
-  const [authed, setAuthed] = useState(false)
-
-  if (authed && (page === 'dashboard' || page === 'history' || page === 'billing' || page === 'settings')) {
-    return <AppShell initialPage={page === 'dashboard' || page === 'history' || page === 'billing' || page === 'settings' ? page : 'dashboard'} />
-  }
-
-  if (page === 'login' || page === 'signup') {
-    return (
-      <Auth
-        mode={page === 'login' ? 'login' : 'signup'}
-        onSuccess={() => {
-          setAuthed(true)
-          setPage('dashboard')
-        }}
-        onBackToLanding={() => setPage('landing')}
-      />
-    )
-  }
+function AppRoutes({ authed, setAuthed }: { authed: boolean; setAuthed: (value: boolean) => void }) {
+  const navigate = useNavigate()
 
   return (
-    <Landing
-      onGetStarted={() => setPage('signup')}
-      onLogin={() => setPage('login')}
-    />
+    <Routes>
+        <Route path="/" element={<Landing onGetStarted={() => navigate('/signup')} onLogin={() => navigate('/login')} />} />
+        <Route
+          path="/login"
+          element={
+            <Auth
+              mode="login"
+              onSuccess={() => {
+                localStorage.setItem('voiceover-demo-auth', 'true')
+                setAuthed(true)
+                navigate('/dashboard')
+              }}
+              onBackToLanding={() => navigate('/')}
+            />
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <Auth
+              mode="signup"
+              onSuccess={() => {
+                localStorage.setItem('voiceover-demo-auth', 'true')
+                setAuthed(true)
+                navigate('/dashboard')
+              }}
+              onBackToLanding={() => navigate('/')}
+            />
+          }
+        />
+        <Route element={<ProtectedRoute authed={authed} />}>
+          <Route element={<AppShell />}>
+            <Route path="/dashboard" element={<DashboardRoute />} />
+            <Route path="/history" element={<History />} />
+            <Route path="/billing" element={<BillingRoute />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
+}
+
+export default function App() {
+  const [authed, setAuthed] = useState(() => localStorage.getItem('voiceover-demo-auth') === 'true')
+
+  return (
+    <BrowserRouter>
+      <AppRoutes authed={authed} setAuthed={setAuthed} />
+    </BrowserRouter>
   )
 }
