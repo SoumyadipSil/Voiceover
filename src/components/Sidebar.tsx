@@ -4,6 +4,9 @@ import { supabase } from '../lib/supabase'
 interface Props {
   currentPage: string
   onNavigate: (page: string) => void
+  onLogoClick?: () => void
+  onToggleCollapse?: () => void
+  collapsed?: boolean
   onExitToDashboard?: () => void
   usagePercent?: number
   minutesLeft?: number
@@ -68,7 +71,25 @@ function LogoMark() {
   )
 }
 
-export default function Sidebar({ currentPage, onNavigate, usagePercent = 0, minutesLeft = 0, totalMinutes = 1 }: Props) {
+function HomeIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+      <path d="M2 7.3L8 2l6 5.3V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7.3Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+      <path d="M6 14v-4h4v4" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+export default function Sidebar({
+  currentPage,
+  onNavigate,
+  onLogoClick,
+  onToggleCollapse,
+  collapsed = false,
+  usagePercent = 0,
+  minutesLeft = 0,
+  totalMinutes = 1,
+}: Props) {
   const [displayName, setDisplayName] = useState('Creator')
   const [email, setEmail] = useState('')
 
@@ -91,95 +112,168 @@ export default function Sidebar({ currentPage, onNavigate, usagePercent = 0, min
 
   return (
     <aside
-      className="fixed left-0 top-0 h-full w-56 flex flex-col justify-between py-4 z-40"
+      className="fixed left-0 top-0 h-full flex flex-col justify-between py-4 z-40 transition-all duration-200"
       style={{
+        width: collapsed ? 72 : 224,
         background: '#0a0c13',
         borderRight: '1px solid #151c2e',
       }}
     >
-      <div className="flex flex-col gap-6">
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-4 pt-2">
-          <LogoMark />
-          <span
-            className="font-display font-bold text-base"
-            style={{ color: '#F0F4FF', letterSpacing: '-0.03em' }}
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between px-3 pt-2">
+          <button
+            type="button"
+            onClick={onLogoClick}
+            className="flex items-center gap-3 text-left"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: onLogoClick ? 'pointer' : 'default',
+              padding: 0,
+            }}
           >
-            Voiceover
-          </span>
-        </div>
-
-        {/* Nav */}
-        <nav className="flex flex-col gap-0.5 px-2">
-          {navItems.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              className={`sidebar-item w-full text-left ${currentPage === id ? 'active' : ''}`}
-              onClick={() => onNavigate(id)}
-            >
-              <Icon />
-              <span>{label}</span>
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      {/* Usage meter */}
-      <div className="px-3 flex flex-col gap-3">
-        <div
-          className="rounded-xl p-3 flex flex-col gap-2.5"
-          style={{ background: '#111520', border: '1px solid #1e2a40' }}
-        >
-          <div className="flex items-center justify-between">
-            <span style={{ color: '#4f5a72', fontSize: '11px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              Free Plan
-            </span>
-            <span style={{ color: '#00d2df', fontSize: '12px', fontWeight: 600 }}>
-              {minutesLeft}s left
-            </span>
-          </div>
-
-          {/* Bar */}
-          <div style={{ background: '#1a1f2e', borderRadius: 4, height: 4, overflow: 'hidden' }}>
-            <div
-              style={{
-                width: `${usagePercent}%`,
-                height: '100%',
-                background: usagePercent > 80 ? '#ef4444' : 'linear-gradient(90deg, #00d2df, #48effc)',
-                borderRadius: 4,
-                transition: 'width 0.5s ease',
-              }}
-            />
-          </div>
-
-          <div style={{ color: '#4f5a72', fontSize: '11px' }}>
-            {totalMinutes - minutesLeft}s used of {totalMinutes}min
-          </div>
+            <LogoMark />
+            {!collapsed && (
+              <span
+                className="font-display font-bold text-base"
+                style={{ color: '#F0F4FF', letterSpacing: '-0.03em' }}
+              >
+                Voiceover
+              </span>
+            )}
+          </button>
 
           <button
-            className="btn-primary w-full py-2 rounded-lg text-xs font-semibold"
-            onClick={() => onNavigate('billing')}
+            type="button"
+            onClick={onToggleCollapse}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            style={{
+              width: 26,
+              height: 26,
+              borderRadius: 8,
+              border: '1px solid #1e2a40',
+              background: '#111520',
+              color: '#8892aa',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              padding: 0,
+            }}
           >
-            Upgrade Plan ↑
+            {collapsed ? '→' : '←'}
           </button>
         </div>
 
-        {/* User avatar */}
-        <div className="flex items-center gap-2.5 px-1 py-1">
+        <div className="px-2" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <button
+            type="button"
+            onClick={() => onLogoClick?.()}
+            className="sidebar-item w-full text-left"
+            style={{
+              justifyContent: collapsed ? 'center' : 'flex-start',
+              paddingLeft: collapsed ? 10 : 12,
+              paddingRight: collapsed ? 10 : 12,
+            }}
+          >
+            <HomeIcon size={16} />
+            {!collapsed && <span>Home</span>}
+          </button>
+
+          <nav className="flex flex-col gap-0.5">
+            {navItems.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                className={`sidebar-item w-full text-left ${currentPage === id ? 'active' : ''}`}
+                onClick={() => onNavigate(id)}
+                style={{
+                  justifyContent: collapsed ? 'center' : 'flex-start',
+                  paddingLeft: collapsed ? 10 : 12,
+                  paddingRight: collapsed ? 10 : 12,
+                }}
+              >
+                <Icon size={18} />
+                {!collapsed && <span>{label}</span>}
+              </button>
+            ))}
+          </nav>
+        </div>
+      </div>
+
+      <div className="px-3 flex flex-col gap-3" style={{ alignItems: collapsed ? 'center' : 'stretch' }}>
+        <div
+          className="rounded-xl p-3 flex flex-col gap-2.5"
+          style={{
+            background: '#111520',
+            border: '1px solid #1e2a40',
+            width: collapsed ? 52 : '100%',
+            padding: collapsed ? 8 : 12,
+          }}
+        >
+          {!collapsed && (
+            <>
+              <div className="flex items-center justify-between">
+                <span style={{ color: '#4f5a72', fontSize: '11px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  Free Plan
+                </span>
+                <span style={{ color: '#00d2df', fontSize: '12px', fontWeight: 600 }}>
+                  {minutesLeft}s left
+                </span>
+              </div>
+
+              <div style={{ background: '#1a1f2e', borderRadius: 4, height: 4, overflow: 'hidden' }}>
+                <div
+                  style={{
+                    width: `${usagePercent}%`,
+                    height: '100%',
+                    background: usagePercent > 80 ? '#ef4444' : 'linear-gradient(90deg, #00d2df, #48effc)',
+                    borderRadius: 4,
+                    transition: 'width 0.5s ease',
+                  }}
+                />
+              </div>
+
+              <div style={{ color: '#4f5a72', fontSize: '11px' }}>
+                {totalMinutes - minutesLeft}s used of {totalMinutes}min
+              </div>
+
+              <button
+                className="btn-primary w-full py-2 rounded-lg text-xs font-semibold"
+                onClick={() => onNavigate('billing')}
+              >
+                Upgrade Plan ↑
+              </button>
+            </>
+          )}
+
+          {collapsed && (
+            <button
+              className="btn-primary w-full py-2 rounded-lg text-xs font-semibold"
+              onClick={() => onNavigate('billing')}
+              style={{ padding: '8px 6px' }}
+            >
+              ↑
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2.5 px-1 py-1" style={{ width: '100%', justifyContent: collapsed ? 'center' : 'flex-start' }}>
           <div
             className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
             style={{ background: 'rgba(0,210,223,0.15)', color: '#00d2df' }}
           >
             {initials}
           </div>
-          <div className="flex flex-col min-w-0">
-            <span style={{ color: '#8892aa', fontSize: '12px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {displayName}
-            </span>
-            <span style={{ color: '#4f5a72', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {email || 'Free tier'}
-            </span>
-          </div>
+          {!collapsed && (
+            <div className="flex flex-col min-w-0">
+              <span style={{ color: '#8892aa', fontSize: '12px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {displayName}
+              </span>
+              <span style={{ color: '#4f5a72', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {email || 'Free tier'}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </aside>

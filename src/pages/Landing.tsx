@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
 import ShaderBackground from '../components/ShaderBackground'
+import { supabase } from '../lib/supabase'
 
 interface Props {
   onGetStarted: () => void
   onLogin: () => void
+  isAuthed?: boolean
+  onOpenDashboard?: () => void
 }
 
 const voices = [
@@ -158,16 +161,26 @@ function StatBadge({ value, label, icon }: { value: string; label: string; icon:
   )
 }
 
-export default function Landing({ onGetStarted, onLogin }: Props) {
+export default function Landing({ onGetStarted, onLogin, isAuthed = false, onOpenDashboard }: Props) {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [playingVoice, setPlayingVoice] = useState<number | null>(null)
   const [navScrolled, setNavScrolled] = useState(false)
+  const [userInitial, setUserInitial] = useState('C')
 
   useEffect(() => {
     const handler = () => setNavScrolled(window.scrollY > 40)
     window.addEventListener('scroll', handler)
     return () => window.removeEventListener('scroll', handler)
   }, [])
+
+  useEffect(() => {
+    if (!isAuthed || !supabase) return
+
+    supabase.auth.getUser().then(({ data }) => {
+      const name = data.user?.user_metadata?.full_name || data.user?.email || 'Creator'
+      setUserInitial(name.trim().charAt(0).toUpperCase())
+    })
+  }, [isAuthed])
 
   return (
     <div className="min-h-screen" style={{ background: '#090A0F' }}>
@@ -210,20 +223,41 @@ export default function Landing({ onGetStarted, onLogin }: Props) {
         </div>
 
         {/* CTAs */}
-        <div className="flex items-center gap-3">
+        {isAuthed ? (
           <button
-            className="btn-ghost px-4 py-2 rounded-xl text-sm font-medium"
-            onClick={onLogin}
+            type="button"
+            onClick={onOpenDashboard ?? onLogin}
+            className="flex items-center gap-2 rounded-full px-3 py-2 transition-all"
+            style={{
+              background: 'rgba(17,21,32,0.9)',
+              border: '1px solid #1e2a40',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.28)',
+              cursor: 'pointer',
+            }}
           >
-            Log in
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+              style={{ background: 'rgba(0,210,223,0.15)', color: '#00d2df', border: '1px solid rgba(0,210,223,0.2)' }}
+            >
+              {userInitial}
+            </div>
           </button>
-          <button
-            className="btn-primary px-5 py-2 rounded-xl text-sm font-semibold"
-            onClick={onGetStarted}
-          >
-            Get Started Free
-          </button>
-        </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <button
+              className="btn-ghost px-4 py-2 rounded-xl text-sm font-medium"
+              onClick={onLogin}
+            >
+              Log in
+            </button>
+            <button
+              className="btn-primary px-5 py-2 rounded-xl text-sm font-semibold"
+              onClick={onGetStarted}
+            >
+              Get Started Free
+            </button>
+          </div>
+        )}
       </nav>
 
       {/* Hero */}

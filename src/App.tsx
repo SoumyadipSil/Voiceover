@@ -40,6 +40,7 @@ function AppShell() {
   const location = useLocation()
   const currentPage = location.pathname.slice(1) as AppPage
   const [showPaywall, setShowPaywall] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [userInitial, setUserInitial] = useState('C')
 
   useEffect(() => {
@@ -60,13 +61,16 @@ function AppShell() {
       <Sidebar
         currentPage={currentPage}
         onNavigate={page => navigate(`/${page}`)}
+        onLogoClick={() => navigate('/')}
+        onToggleCollapse={() => setSidebarCollapsed(value => !value)}
+        collapsed={sidebarCollapsed}
         usagePercent={usagePercent}
         minutesLeft={minutesLeft}
         totalMinutes={totalMinutes}
       />
 
       {/* Main content */}
-      <div className="flex-1 ml-56 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen" style={{ marginLeft: sidebarCollapsed ? 72 : 224 }}>
         {/* Top header bar */}
         <header
           className="flex items-center justify-between px-6 h-14 flex-shrink-0 sticky top-0 z-30"
@@ -76,11 +80,22 @@ function AppShell() {
             borderBottom: '1px solid #151c2e',
           }}
         >
-          <div style={{ color: '#4f5a72', fontSize: '13px' }}>
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            style={{
+              color: '#4f5a72',
+              fontSize: '13px',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
             <span style={{ color: '#F0F4FF', fontWeight: 500 }}>Voiceover</span>
             <span style={{ margin: '0 6px' }}>/</span>
             <span style={{ textTransform: 'capitalize' }}>{currentPage}</span>
-          </div>
+          </button>
           <div className="flex items-center gap-3">
             <div
               className="flex items-center gap-2 rounded-lg px-3 py-1.5"
@@ -130,7 +145,17 @@ function AppRoutes({ authed, setAuthed }: { authed: boolean; setAuthed: (value: 
 
   return (
     <Routes>
-        <Route path="/" element={<Landing onGetStarted={() => navigate('/signup')} onLogin={() => navigate('/login')} />} />
+        <Route
+          path="/"
+          element={
+            <Landing
+              isAuthed={authed}
+              onGetStarted={() => navigate('/signup')}
+              onLogin={() => navigate('/login')}
+              onOpenDashboard={() => navigate('/dashboard')}
+            />
+          }
+        />
         <Route
           path="/login"
           element={
