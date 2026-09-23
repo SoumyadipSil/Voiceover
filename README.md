@@ -39,6 +39,28 @@ Voiceover turns a script into polished narration with a focused creator workflow
 pnpm install
 ```
 
+### Supabase Configuration
+
+Copy `.env.example` to `.env.local` and add the public URL and anon key from your Supabase project:
+
+```bash
+cp .env.example .env.local
+```
+
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+For Vercel, add the same variables in **Project Settings > Environment Variables** for Preview and Production deployments. Never expose a Supabase service-role key in this frontend application.
+
+In Supabase Authentication settings, configure the site URL and add these redirect URLs:
+
+```text
+http://localhost:8443/**
+https://your-production-domain.vercel.app/**
+```
+
 ### Development
 
 ```bash
@@ -89,7 +111,7 @@ src/
 
 ## Current Status
 
-This is a front-end prototype. Authentication, voice generation, downloads, billing, and account actions currently use local state and sample data. A backend, database, and production voice-generation service are not connected yet.
+This is a front-end prototype. Supabase email/password authentication and session persistence are wired in when environment variables are configured. Voice generation, downloads, billing, and account actions still use local state and sample data. A production voice-generation service and application database are not connected yet.
 
 ## Routes
 

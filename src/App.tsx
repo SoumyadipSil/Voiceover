@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation, useNavigate, useOutletContext } from 'react-router-dom'
 import Landing from './pages/Landing'
 import Auth from './pages/Auth'
@@ -8,12 +8,21 @@ import Billing from './pages/Billing'
 import Settings from './pages/Settings'
 import Sidebar from './components/Sidebar'
 import PaywallModal from './components/PaywallModal'
+import { isSupabaseConfigured, supabase } from './lib/supabase'
 
 type AppPage = 'dashboard' | 'history' | 'billing' | 'settings'
 type AppShellContext = { onShowPaywall: () => void }
 
 function ProtectedRoute({ authed }: { authed: boolean }) {
   return authed ? <Outlet /> : <Navigate to="/" replace />
+}
+
+function AuthLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#090A0F', color: '#8892aa' }}>
+      Restoring your session...
+    </div>
+  )
 }
 
 function DashboardRoute() {
@@ -31,6 +40,16 @@ function AppShell() {
   const location = useLocation()
   const currentPage = location.pathname.slice(1) as AppPage
   const [showPaywall, setShowPaywall] = useState(false)
+  const [userInitial, setUserInitial] = useState('C')
+
+  useEffect(() => {
+    if (!supabase) return
+
+    supabase.auth.getUser().then(({ data }) => {
+      const name = data.user?.user_metadata?.full_name || data.user?.email || 'Creator'
+      setUserInitial(name.trim().charAt(0).toUpperCase())
+    })
+  }, [])
 
   const usagePercent = 0
   const minutesLeft = 60
@@ -82,7 +101,7 @@ function AppShell() {
               style={{ background: 'rgba(0,210,223,0.15)', color: '#00d2df', border: '1px solid rgba(0,210,223,0.2)' }}
               onClick={() => navigate('/settings')}
             >
-              R
+              {userInitial}
             </div>
           </div>
         </header>
@@ -118,7 +137,6 @@ function AppRoutes({ authed, setAuthed }: { authed: boolean; setAuthed: (value: 
             <Auth
               mode="login"
               onSuccess={() => {
-                localStorage.setItem('voiceover-demo-auth', 'true')
                 setAuthed(true)
                 navigate('/dashboard')
               }}
@@ -132,7 +150,6 @@ function AppRoutes({ authed, setAuthed }: { authed: boolean; setAuthed: (value: 
             <Auth
               mode="signup"
               onSuccess={() => {
-                localStorage.setItem('voiceover-demo-auth', 'true')
                 setAuthed(true)
                 navigate('/dashboard')
               }}
@@ -154,11 +171,27 @@ function AppRoutes({ authed, setAuthed }: { authed: boolean; setAuthed: (value: 
 }
 
 export default function App() {
-  const [authed, setAuthed] = useState(() => localStorage.getItem('voiceover-demo-auth') === 'true')
+  const [authed, setAuthed] = useState<boolean | null>(() => (
+    isSupabaseConfigured ? null : localStorage.getItem('voiceover-demo-auth') === 'true'
+  ))
+
+  useEffect(() => {
+    if (!supabase) return
+
+    supabase.auth.getSession().then(({ data }) => {
+      setAuthed(Boolean(data.session))
+    })
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthed(Boolean(session))
+    })
+
+    return () => listener.subscription.unsubscribe()
+  }, [])
 
   return (
     <BrowserRouter>
-      <AppRoutes authed={authed} setAuthed={setAuthed} />
+      {authed === null ? <AuthLoading /> : <AppRoutes authed={authed} setAuthed={setAuthed} />}
     </BrowserRouter>
   )
 }

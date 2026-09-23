@@ -1,4 +1,8 @@
 {
+  "title": "Voiceover",
+  "icons": {
+    "icon": "/favicon.svg"
+  },
   "description": "Transform scripts into high-quality AI voiceovers in seconds, perfect for faceless YouTube creators seeking efficient content production.",
   "robots": {
     "index": false

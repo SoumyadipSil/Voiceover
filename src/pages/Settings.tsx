@@ -1,16 +1,50 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
 
 export default function Settings() {
-  const [name, setName] = useState('Rahul Sharma')
-  const [email, setEmail] = useState('rahul@example.com')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
   const [emailNotifs, setEmailNotifs] = useState(true)
   const [weeklyDigest, setWeeklyDigest] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleSave = () => {
+  useEffect(() => {
+    if (!supabase) {
+      setName('Creator')
+      return
+    }
+
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) return
+      setName(data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'Creator')
+      setEmail(data.user.email || '')
+    })
+  }, [])
+
+  const handleSave = async () => {
+    setError('')
+
+    if (supabase) {
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { full_name: name },
+      })
+      if (updateError) {
+        setError(updateError.message)
+        return
+      }
+    }
+
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
+
+  const initials = (name || 'Creator')
+    .split(' ')
+    .map(part => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
 
   return (
     <div className="flex flex-col gap-5 p-5 max-w-2xl">
@@ -35,7 +69,7 @@ export default function Settings() {
             className="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold flex-shrink-0"
             style={{ background: 'rgba(0,210,223,0.12)', color: '#00d2df', border: '1px solid rgba(0,210,223,0.2)' }}
           >
-            R
+            {initials}
           </div>
           <div>
             <button className="btn-ghost px-4 py-2 rounded-xl text-sm font-medium">
@@ -63,7 +97,7 @@ export default function Settings() {
               type="email"
               className="input-field w-full px-4 py-3 rounded-xl text-sm"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              readOnly
             />
           </div>
         </div>
@@ -81,6 +115,7 @@ export default function Settings() {
             </>
           ) : 'Save changes'}
         </button>
+        {error && <p style={{ color: '#fca5a5', fontSize: '12px' }}>{error}</p>}
       </div>
 
       {/* Password */}

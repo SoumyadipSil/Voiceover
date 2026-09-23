@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { isSupabaseConfigured, supabase } from '../lib/supabase'
 
 interface Props {
   mode?: 'login' | 'signup'
@@ -12,14 +13,41 @@ export default function Auth({ mode: initialMode = 'signup', onSuccess, onBackTo
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
+
+    if (!supabase) {
+      setError('Supabase is not configured. Add the VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.')
+      return
+    }
+
     setLoading(true)
-    setTimeout(() => {
+    const result = mode === 'signup'
+      ? await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { full_name: name } },
+        })
+      : await supabase.auth.signInWithPassword({ email, password })
+
+    setLoading(false)
+    if (result.error) {
+      setError(result.error.message)
+      return
+    }
+
+    if (mode === 'signup' && !result.data.session) {
+      setError('Account created. Check your email to confirm your account, then sign in.')
+      return
+    }
+
+    if (result.data.session) {
       setLoading(false)
       onSuccess()
-    }, 900)
+    }
   }
 
   return (
@@ -107,6 +135,19 @@ export default function Auth({ mode: initialMode = 'signup', onSuccess, onBackTo
           {/* Google OAuth */}
           <button
             className="btn-ghost w-full py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-3 mb-5"
+            onClick={async () => {
+              if (!supabase) {
+                setError('Supabase is not configured yet.')
+                return
+              }
+              setError('')
+              const { error: oauthError } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.origin + '/dashboard' },
+              })
+              if (oauthError) setError(oauthError.message)
+            }}
+            disabled={!isSupabaseConfigured || loading}
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
               <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4" />
@@ -123,6 +164,15 @@ export default function Auth({ mode: initialMode = 'signup', onSuccess, onBackTo
             <span style={{ color: '#4f5a72', fontSize: '12px' }}>or</span>
             <div style={{ flex: 1, height: 1, background: '#1e2a40' }} />
           </div>
+
+          {error && (
+            <div
+              className="rounded-xl px-4 py-3 mb-5"
+              style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#fca5a5', fontSize: '12px', lineHeight: 1.5 }}
+            >
+              {error}
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">

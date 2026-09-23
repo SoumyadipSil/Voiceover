@@ -1,3 +1,6 @@
+import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
+
 interface Props {
   currentPage: string
   onNavigate: (page: string) => void
@@ -66,6 +69,26 @@ function LogoMark() {
 }
 
 export default function Sidebar({ currentPage, onNavigate, usagePercent = 0, minutesLeft = 0, totalMinutes = 1 }: Props) {
+  const [displayName, setDisplayName] = useState('Creator')
+  const [email, setEmail] = useState('')
+
+  useEffect(() => {
+    if (!supabase) return
+
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) return
+      setDisplayName(data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'Creator')
+      setEmail(data.user.email || '')
+    })
+  }, [])
+
+  const initials = displayName
+    .split(' ')
+    .map(part => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+
   return (
     <aside
       className="fixed left-0 top-0 h-full w-56 flex flex-col justify-between py-4 z-40"
@@ -147,13 +170,15 @@ export default function Sidebar({ currentPage, onNavigate, usagePercent = 0, min
             className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
             style={{ background: 'rgba(0,210,223,0.15)', color: '#00d2df' }}
           >
-            R
+            {initials}
           </div>
           <div className="flex flex-col min-w-0">
             <span style={{ color: '#8892aa', fontSize: '12px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              Rahul Sharma
+              {displayName}
             </span>
-            <span style={{ color: '#4f5a72', fontSize: '11px' }}>Free tier</span>
+            <span style={{ color: '#4f5a72', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {email || 'Free tier'}
+            </span>
           </div>
         </div>
       </div>
