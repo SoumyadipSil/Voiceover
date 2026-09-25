@@ -50,9 +50,15 @@ cp .env.example .env.local
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
+
+# Server-only TTS keys. Never expose these with a VITE_ prefix.
+NVIDIA_API_KEY=your-nvidia-api-key
+OPENROUTER_API_KEY=your-openrouter-api-key
+# Optional for self-hosted NVIDIA NIM:
+# NVIDIA_TTS_URL=https://ai.api.nvidia.com/v1/audio/speech
 ```
 
-For Vercel, add the same variables in **Project Settings > Environment Variables** for Preview and Production deployments. Never expose a Supabase service-role key in this frontend application.
+For Vercel, add the Supabase variables in **Project Settings > Environment Variables** for Preview and Production deployments. Add the NVIDIA and OpenRouter keys there as server-only variables. Never expose a provider key or Supabase service-role key in this frontend application.
 
 In Supabase Authentication settings, configure the site URL and add these redirect URLs:
 
@@ -111,7 +117,15 @@ src/
 
 ## Current Status
 
-This is a front-end prototype. Supabase email/password authentication and session persistence are wired in when environment variables are configured. Voice generation, downloads, billing, and account actions still use local state and sample data. A production voice-generation service and application database are not connected yet.
+Supabase email/password authentication and session persistence are wired in when environment variables are configured. Speech generation now uses the server-side `/api/speech` proxy with NVIDIA Magpie Zero-Shot as the primary model and OpenRouter Fish Audio and Deepgram Flux as alternatives. History persistence, billing, and account actions still require a production application database and billing integration.
+
+### Speech Provider Setup
+
+- NVIDIA Magpie Zero-Shot requires NVIDIA API access and a short clean reference audio sample. The browser sends the sample to `/api/speech`; the provider key remains server-side.
+- OpenRouter Fish Audio uses its provider voice identifier and accepts text-only MP3 generation.
+- OpenRouter Deepgram Flux exposes the supported `flux-*-en` voice identifiers in the voice picker.
+- The provider endpoint returns raw audio bytes. The client creates a temporary browser audio URL for playback.
+- For local Vercel API testing, use `vercel dev` so `/api/speech` is available alongside the Vite app. `npm run dev` alone only serves the frontend.
 
 ## Routes
 

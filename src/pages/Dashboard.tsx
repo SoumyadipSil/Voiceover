@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import PaywallModal from '../components/PaywallModal'
+import { deepgramVoices, fishAudioVoice, synthesizeSpeech, ttsModels, type TtsModelId } from '../lib/tts'
 
 const voices = [
   { name: 'Kabir', lang: 'HI / EN', style: 'Warm Narrative', avatar: 'K' },
@@ -11,21 +12,62 @@ const voices = [
 ]
 
 const voiceOptions = [
-  { name: 'Richard', label: 'authoritative, deeply resonant voice', gender: 'Male', tags: ['American', 'Narrative & Story'], tone: 'Middle-aged Male', accent: 'American' },
-  { name: 'Ariana', label: 'sassy & husky tone', gender: 'Female', tags: ['American', 'Animation & Characters'], tone: 'Female', accent: 'American' },
-  { name: 'Carter', label: 'relaxed, friendly & confident', gender: 'Male', tags: ['American', 'Conversational'], tone: 'Young Male', accent: 'American' },
-  { name: 'Ella', label: 'calm and soft spoken', gender: 'Female', tags: ['British', 'Social Media'], tone: 'Female', accent: 'British' },
-  { name: 'Avery', label: 'youthful & energetic tone', gender: 'Female', tags: ['American', 'Conversational'], tone: 'Young Female', accent: 'American' },
-  { name: 'Sophie', label: 'lively and upbeat voice', gender: 'Female', tags: ['American', 'Advertisement'], tone: 'Female', accent: 'American' },
-  { name: 'Ethan', label: 'versatile narrator', gender: 'Male', tags: ['American', 'Narrative & Story'], tone: 'Male', accent: 'American' },
-  { name: 'Grace', label: 'confident teenager', gender: 'Female', tags: ['American', 'Commercial'], tone: 'Teen Female', accent: 'American' },
+  { id: 'richard', name: 'Richard', label: 'authoritative, deeply resonant voice', gender: 'Male', tags: ['American', 'Narrative & Story'], tone: 'Middle-aged Male', accent: 'American' },
+  { id: 'ariana', name: 'Ariana', label: 'sassy & husky tone', gender: 'Female', tags: ['American', 'Animation & Characters'], tone: 'Female', accent: 'American' },
+  { id: 'carter', name: 'Carter', label: 'relaxed, friendly & confident', gender: 'Male', tags: ['American', 'Conversational'], tone: 'Young Male', accent: 'American' },
+  { id: 'ella', name: 'Ella', label: 'calm and soft spoken', gender: 'Female', tags: ['British', 'Social Media'], tone: 'Female', accent: 'British' },
+  { id: 'avery', name: 'Avery', label: 'youthful & energetic tone', gender: 'Female', tags: ['American', 'Conversational'], tone: 'Young Female', accent: 'American' },
+  { id: 'sophie', name: 'Sophie', label: 'lively and upbeat voice', gender: 'Female', tags: ['American', 'Advertisement'], tone: 'Female', accent: 'American' },
+  { id: 'ethan', name: 'Ethan', label: 'versatile narrator', gender: 'Male', tags: ['American', 'Narrative & Story'], tone: 'Male', accent: 'American' },
+  { id: 'grace', name: 'Grace', label: 'confident teenager', gender: 'Female', tags: ['American', 'Commercial'], tone: 'Teen Female', accent: 'American' },
 ]
+
+type VoiceOption = (typeof voiceOptions)[number]
+
+const deepgramVoiceOptions: VoiceOption[] = deepgramVoices.map(voiceId => {
+  const name = voiceId.replace('flux-', '').replace('-en', '').replace(/-/g, ' ')
+  return {
+    id: voiceId,
+    name: name.replace(/\b\w/g, character => character.toUpperCase()),
+    label: 'Deepgram Flux production voice',
+    gender: 'Voice',
+    tags: ['English', 'Flux TTS'],
+    tone: 'English (US)',
+    accent: 'English',
+  }
+})
+
+const fishVoiceOptions: VoiceOption[] = [{
+  id: fishAudioVoice,
+  name: 'S2.1 Pro',
+  label: 'natural expressive provider voice',
+  gender: 'Voice',
+  tags: ['Expressive', 'Fish Audio'],
+  tone: 'Provider voice',
+  accent: 'Multilingual',
+}]
+
+const nvidiaVoiceOptions: VoiceOption[] = [{
+  id: 'nvidia-reference',
+  name: 'Reference Voice',
+  label: 'voice cloned from your uploaded sample',
+  gender: 'Your sample',
+  tags: ['Zero-shot', 'NVIDIA NIM'],
+  tone: 'Reference sample',
+  accent: 'Sample-based',
+}]
+
+const voiceCatalog: Record<TtsModelId, VoiceOption[]> = {
+  'nvidia/magpie-tts-zeroshot': nvidiaVoiceOptions,
+  'deepgram/flux-tts': deepgramVoiceOptions,
+  'fish-audio/s2.1-pro-free': fishVoiceOptions,
+}
 
 const emotions = ['Neutral', 'Calm', 'Happy', 'Sad', 'Dramatic', 'Fearful', 'Energetic', 'Whisper']
 
 const waveBarHeights = [12, 20, 36, 24, 48, 32, 16, 44, 36, 56, 28, 40, 52, 20, 60, 36, 48, 24, 40, 64, 28, 52, 16, 44, 36, 56, 24, 48, 32, 60, 20, 44, 36, 52, 28, 40, 64, 24, 16, 48, 28, 36, 52, 20, 44, 60, 32, 40, 16, 24, 48, 36, 56, 28, 44, 20, 60, 32, 48, 24, 36, 52, 16, 40]
 
-function WaveformPlayer({ isPlaying }: { isPlaying: boolean }) {
+function WaveformPlayer({ isPlaying, audioUrl }: { isPlaying: boolean; audioUrl: string }) {
   const playheadPos = 42
 
   return (
@@ -168,6 +210,8 @@ function WaveformPlayer({ isPlaying }: { isPlaying: boolean }) {
           </button>
         </div>
       </div>
+
+      {audioUrl && <audio className="mt-3 w-full" controls src={audioUrl} />}
     </div>
   )
 }
@@ -175,6 +219,13 @@ function WaveformPlayer({ isPlaying }: { isPlaying: boolean }) {
 export default function Dashboard({ onShowPaywall }: { onShowPaywall?: () => void }) {
   const [selectedVoice, setSelectedVoice] = useState(0)
   const [showVoicePanel, setShowVoicePanel] = useState(false)
+  const [selectedModel, setSelectedModel] = useState<TtsModelId>('nvidia/magpie-tts-zeroshot')
+  const [providerVoice, setProviderVoice] = useState('flux-priya-en')
+  const [referenceAudio, setReferenceAudio] = useState('')
+  const [voiceSearch, setVoiceSearch] = useState('')
+  const [voiceGender, setVoiceGender] = useState('All genders')
+  const [voiceAccent, setVoiceAccent] = useState('All accents')
+  const [voiceCategory, setVoiceCategory] = useState('All categories')
   const [selectedEmotion, setSelectedEmotion] = useState('Neutral')
   const [script, setScript] = useState(`In the sweltering autumn of 476 AD, the Western Roman Empire did not collapse with an apocalyptic roar. It surrendered with a tired, silent whimper.
 
@@ -182,7 +233,9 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
   const [generating, setGenerating] = useState(false)
   const [generated, setGenerated] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [audioUrl, setAudioUrl] = useState('')
   const [showPaywallState, setShowPaywallState] = useState(false)
+  const [generationError, setGenerationError] = useState('')
   const [pace, setPace] = useState(1.05)
   const [pitch, setPitch] = useState(-1.2)
   const [breathiness, setBreathiness] = useState(18)
@@ -201,22 +254,84 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
     onShowPaywall?.()
   }
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (estDurationSecs > freeMinutes) {
       openPaywall()
       return
     }
+
+    setGenerationError('')
     setGenerating(true)
     setGenerated(false)
-    setTimeout(() => {
+
+    try {
+      const audioBlob = await synthesizeSpeech({
+        model: selectedModel,
+        input: script.trim(),
+        voice: selectedModel === 'nvidia/magpie-tts-zeroshot' ? undefined : selectedModel === 'fish-audio/s2.1-pro-free' ? fishAudioVoice : providerVoice,
+        referenceAudio: selectedModel === 'nvidia/magpie-tts-zeroshot' ? referenceAudio : undefined,
+        responseFormat: 'mp3',
+      })
+      setAudioUrl(currentUrl => {
+        if (currentUrl) URL.revokeObjectURL(currentUrl)
+        return URL.createObjectURL(audioBlob)
+      })
       setGenerating(false)
       setGenerated(true)
       setIsPlaying(true)
-    }, 2200)
+    } catch (error) {
+      setGenerating(false)
+      setGenerationError(error instanceof Error ? error.message : 'Unable to generate audio.')
+    }
   }
 
-  const activeVoice = voiceOptions[selectedVoice % voiceOptions.length]
-  const selectedVoiceSummary = voices[selectedVoice % voices.length]
+  const availableVoices = voiceCatalog[selectedModel]
+  const filteredVoices = availableVoices.filter(voice => {
+    const query = voiceSearch.trim().toLowerCase()
+    const matchesSearch = !query || `${voice.name} ${voice.label} ${voice.tags.join(' ')}`.toLowerCase().includes(query)
+    const matchesGender = voiceGender === 'All genders' || voice.gender === voiceGender
+    const matchesAccent = voiceAccent === 'All accents' || voice.accent === voiceAccent
+    const matchesCategory = voiceCategory === 'All categories' || voice.tags.includes(voiceCategory)
+    return matchesSearch && matchesGender && matchesAccent && matchesCategory
+  })
+  const activeVoice = availableVoices[selectedVoice % availableVoices.length]
+  const selectedVoiceSummary = {
+    name: activeVoice.name,
+    style: activeVoice.tone,
+    lang: activeVoice.accent,
+    avatar: activeVoice.name.charAt(0).toUpperCase(),
+  }
+  const selectedModelConfig = ttsModels.find(model => model.id === selectedModel) ?? ttsModels[0]
+
+  const handleReferenceAudioChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('audio/')) {
+      setGenerationError('Choose an audio file for the NVIDIA reference sample.')
+      return
+    }
+
+    if (file.size > 8 * 1024 * 1024) {
+      setGenerationError('Reference audio must be smaller than 8 MB.')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => setReferenceAudio(String(reader.result))
+    reader.readAsDataURL(file)
+    setGenerationError('')
+  }
+
+  const handleModelChange = (modelId: TtsModelId) => {
+    setSelectedModel(modelId)
+    setSelectedVoice(0)
+    setVoiceSearch('')
+    setVoiceGender('All genders')
+    setVoiceAccent('All accents')
+    setVoiceCategory('All categories')
+    if (modelId === 'deepgram/flux-tts') setProviderVoice(deepgramVoices[0])
+  }
 
   return (
     <div className="flex h-full flex-col gap-5 overflow-y-auto p-5">
@@ -348,6 +463,7 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
                   </>
                 )}
               </button>
+              {generationError && <p className="mt-3 text-right text-xs text-red-300">{generationError}</p>}
             </div>
           </div>
 
@@ -367,7 +483,7 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
               </button>
             </div>
 
-            <WaveformPlayer isPlaying={isPlaying} />
+            <WaveformPlayer isPlaying={isPlaying} audioUrl={audioUrl} />
           </div>
         </div>
 
@@ -502,55 +618,68 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
               <button type="button" className="voice-selection-tab voice-selection-collection-tab ml-auto rounded-full border border-[#dfe7f3] bg-[#f8fafc] px-4 py-2 text-sm font-medium text-[#475569]">My Collection</button>
             </div>
 
+            <div className="voice-selection-models grid gap-2 border-b border-[#151c2e] bg-[#0a0c13] p-4 md:grid-cols-3">
+              {ttsModels.map(model => (
+                <button
+                  key={model.id}
+                  type="button"
+                  onClick={() => handleModelChange(model.id)}
+                  className={`voice-selection-model text-left ${selectedModel === model.id ? 'voice-selection-model-active' : ''}`}
+                >
+                  <span className="block text-xs font-semibold">{model.name}</span>
+                  <span className="mt-1 block text-[10px] uppercase tracking-[0.08em] opacity-70">{model.provider}</span>
+                  <span className="mt-2 block text-[11px] leading-4 opacity-75">{model.description}</span>
+                </button>
+              ))}
+            </div>
+
             <div className="voice-selection-body grid gap-5 bg-[#eef2f8] p-5 xl:grid-cols-[minmax(0,1.9fr)_340px]">
-              <div className="rounded-2xl border border-[#dfe7f3] bg-white p-4">
+              <div className="voice-selection-library rounded-2xl border border-[#dfe7f3] bg-white p-4">
                 <div className="voice-selection-toolbar mb-4 flex gap-3">
                   <div className="voice-selection-search flex flex-1 items-center gap-2 rounded-xl border border-[#dfe7f3] bg-[#f8fafc] px-3 py-2.5">
                     <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
                       <circle cx="6.5" cy="6.5" r="4.5" stroke="#64748b" strokeWidth="1.5" />
                       <path d="M10.5 10.5L13.5 13.5" stroke="#64748b" strokeWidth="1.5" strokeLinecap="round" />
                     </svg>
-                    <input type="text" placeholder="Search" className="w-full border-none bg-transparent text-sm text-[#0f172a] outline-none placeholder:text-[#94a3b8]" />
+                    <input type="text" placeholder={`Search ${availableVoices.length} voices`} value={voiceSearch} onChange={event => setVoiceSearch(event.target.value)} className="w-full border-none bg-transparent text-sm text-[#0f172a] outline-none placeholder:text-[#94a3b8]" />
                   </div>
 
-                  <div className="voice-selection-filter flex items-center gap-2 rounded-xl border border-[#dfe7f3] bg-[#f8fafc] px-3 py-2.5 text-sm text-[#475569]">
-                    <span>Category</span>
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 4.5l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                  </div>
-                  <div className="voice-selection-filter flex items-center gap-2 rounded-xl border border-[#dfe7f3] bg-[#f8fafc] px-3 py-2.5 text-sm text-[#475569]">
-                    <span>Gender</span>
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 4.5l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                  </div>
-                  <div className="voice-selection-filter flex items-center gap-2 rounded-xl border border-[#dfe7f3] bg-[#f8fafc] px-3 py-2.5 text-sm text-[#475569]">
-                    <span>Age</span>
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 4.5l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                  </div>
-                  <div className="voice-selection-filter flex items-center gap-2 rounded-xl border border-[#dfe7f3] bg-[#f8fafc] px-3 py-2.5 text-sm text-[#475569]">
-                    <span>Accent</span>
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 4.5l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                  </div>
+                  <select value={voiceCategory} onChange={event => setVoiceCategory(event.target.value)} className="voice-selection-filter rounded-xl border border-[#dfe7f3] bg-[#f8fafc] px-3 py-2.5 text-sm text-[#475569]">
+                    <option>All categories</option>
+                    {[...new Set(availableVoices.flatMap(voice => voice.tags))].map(category => <option key={category}>{category}</option>)}
+                  </select>
+                  <select value={voiceGender} onChange={event => setVoiceGender(event.target.value)} className="voice-selection-filter rounded-xl border border-[#dfe7f3] bg-[#f8fafc] px-3 py-2.5 text-sm text-[#475569]">
+                    <option>All genders</option>
+                    {[...new Set(availableVoices.map(voice => voice.gender))].map(gender => <option key={gender}>{gender}</option>)}
+                  </select>
+                  <select value={voiceAccent} onChange={event => setVoiceAccent(event.target.value)} className="voice-selection-filter rounded-xl border border-[#dfe7f3] bg-[#f8fafc] px-3 py-2.5 text-sm text-[#475569]">
+                    <option>All accents</option>
+                    {[...new Set(availableVoices.map(voice => voice.accent))].map(accent => <option key={accent}>{accent}</option>)}
+                  </select>
                 </div>
 
-                <div className="flex flex-wrap gap-2 pb-3 text-xs font-medium text-[#475569]">
-                  <button type="button" className="rounded-full border border-[#dfe7f3] bg-[#f8fafc] px-3 py-1.5">Pro Voices</button>
-                  <button type="button" className="rounded-full border border-[#dfe7f3] bg-[#f8fafc] px-3 py-1.5">FlashX Voices</button>
-                  <button type="button" className="rounded-full border border-[#dfe7f3] bg-[#f8fafc] px-3 py-1.5">Pro Voices (2.0)</button>
-                  <button type="button" className="rounded-full border border-[#dfe7f3] bg-[#f8fafc] px-3 py-1.5">Pro Voices (1.0)</button>
+                <div className="flex items-center justify-between gap-3 pb-3 text-xs font-medium text-[#475569]">
+                  <span>{filteredVoices.length} voices available</span>
+                  {(voiceSearch || voiceGender !== 'All genders' || voiceAccent !== 'All accents' || voiceCategory !== 'All categories') && (
+                    <button type="button" onClick={() => { setVoiceSearch(''); setVoiceGender('All genders'); setVoiceAccent('All accents'); setVoiceCategory('All categories') }} className="text-[#00d2df]">Clear filters</button>
+                  )}
                 </div>
 
                 <div className="voice-selection-grid grid gap-3 md:grid-cols-2">
-                  {voiceOptions.map((voice, index) => (
+                  {filteredVoices.map(voice => {
+                    const voiceIndex = availableVoices.findIndex(item => item.id === voice.id)
+                    return (
                     <button
                       key={voice.name}
                       type="button"
                       onClick={() => {
-                        setSelectedVoice(index)
-                        setShowVoicePanel(false)
+                        setSelectedVoice(voiceIndex)
+                        if (selectedModel === 'deepgram/flux-tts') setProviderVoice(voice.id)
                       }}
-                      className={`voice-selection-card rounded-2xl border p-4 text-left transition hover:border-[#9cc3ff] hover:bg-[#f8fbff] ${selectedVoice === index ? 'voice-selection-card-active' : ''}`}
+                      className={`voice-selection-card rounded-2xl border p-4 text-left transition hover:border-[#9cc3ff] hover:bg-[#f8fbff] ${selectedVoice === voiceIndex ? 'voice-selection-card-active' : ''}`}
                       style={{
-                        borderColor: selectedVoice === index ? '#7db5ff' : '#dfe7f3',
-                        background: selectedVoice === index ? '#eef6ff' : '#fff',
+                        borderColor: selectedVoice === voiceIndex ? '#7db5ff' : '#dfe7f3',
+                        background: selectedVoice === voiceIndex ? '#eef6ff' : '#fff',
                       }}
                     >
                       <div className="flex items-center justify-between gap-3">
@@ -572,7 +701,8 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
                         ))}
                       </div>
                     </button>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
 
@@ -583,6 +713,24 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
 
                 <div className="mb-2 text-xl font-semibold text-[#0f172a]">{activeVoice.name} - {activeVoice.label}</div>
                 <div className="mb-4 text-sm text-[#475569]">{activeVoice.gender}</div>
+
+                <div className="mb-4 rounded-xl border border-[#dfe7f3] bg-[#f8fafc] p-3">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#64748b]">{selectedModelConfig.name} voice</div>
+                  {selectedModel === 'nvidia/magpie-tts-zeroshot' ? (
+                    <label className="block cursor-pointer rounded-lg border border-dashed border-[#2a3147] bg-[#111520] p-3 text-xs text-[#8892aa]">
+                      <span className="font-medium text-[#f0f4ff]">Reference audio sample</span>
+                      <span className="mt-1 block">Upload 3 to 10 seconds of clean speech.</span>
+                      <input type="file" accept="audio/*" onChange={handleReferenceAudioChange} className="mt-3 block w-full text-xs text-[#8892aa]" />
+                      {referenceAudio && <span className="mt-2 block text-[#10f0b0]">Reference sample ready</span>}
+                    </label>
+                  ) : selectedModel === 'fish-audio/s2.1-pro-free' ? (
+                    <p className="text-xs leading-5 text-[#8892aa]">This provider uses a fixed provider voice ID. The model is ready for text-only synthesis.</p>
+                  ) : (
+                    <select value={providerVoice} onChange={event => setProviderVoice(event.target.value)} className="w-full rounded-lg border border-[#1e2a40] bg-[#111520] px-3 py-2 text-xs text-[#f0f4ff] outline-none">
+                      {deepgramVoices.map(voice => <option key={voice} value={voice}>{voice.replace('flux-', '').replace('-en', '')}</option>)}
+                    </select>
+                  )}
+                </div>
 
                 <div className="voice-selection-languages mb-4 rounded-xl border border-[#dfe7f3] bg-[#f8fafc] px-3 py-2 text-sm text-[#475569]">
                   <div className="mb-2 font-medium text-[#1f2937]">Supported Languages (32)</div>
@@ -597,7 +745,7 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
                   In collaboration with <span className="font-semibold text-[#1d4ed8]">IELEnglishLabs</span>
                 </div>
 
-                <button type="button" onClick={() => setShowVoicePanel(false)} className="w-full rounded-xl bg-[#2563eb] px-4 py-3 text-base font-semibold text-white shadow-lg shadow-blue-200">Submit</button>
+                <button type="button" onClick={() => setShowVoicePanel(false)} className="w-full rounded-xl bg-[#00d2df] px-4 py-3 text-base font-semibold text-[#090a0f] shadow-lg shadow-cyan-950/30">Apply voice</button>
               </aside>
             </div>
           </div>
