@@ -71,15 +71,6 @@ function LogoMark() {
   )
 }
 
-function HomeIcon({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
-      <path d="M2 7.3L8 2l6 5.3V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7.3Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-      <path d="M6 14v-4h4v4" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
 export default function Sidebar({
   currentPage,
   onNavigate,
@@ -166,20 +157,6 @@ export default function Sidebar({
         </div>
 
         <div className="px-2" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <button
-            type="button"
-            onClick={() => onLogoClick?.()}
-            className="sidebar-item w-full text-left"
-            style={{
-              justifyContent: collapsed ? 'center' : 'flex-start',
-              paddingLeft: collapsed ? 10 : 12,
-              paddingRight: collapsed ? 10 : 12,
-            }}
-          >
-            <HomeIcon size={16} />
-            {!collapsed && <span>Home</span>}
-          </button>
-
           <nav className="flex flex-col gap-0.5">
             {navItems.map(({ id, label, icon: Icon }) => (
               <button

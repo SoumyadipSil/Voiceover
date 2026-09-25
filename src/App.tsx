@@ -42,15 +42,45 @@ function AppShell() {
   const [showPaywall, setShowPaywall] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [userInitial, setUserInitial] = useState('C')
+  const [profileName, setProfileName] = useState('Creator')
+  const [profileEmail, setProfileEmail] = useState('')
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [darkMode, setDarkMode] = useState(true)
 
   useEffect(() => {
     if (!supabase) return
 
     supabase.auth.getUser().then(({ data }) => {
-      const name = data.user?.user_metadata?.full_name || data.user?.email || 'Creator'
+      const name = data.user?.user_metadata?.full_name || data.user?.email?.split('@')[0] || 'Creator'
+      const email = data.user?.email || ''
       setUserInitial(name.trim().charAt(0).toUpperCase())
+      setProfileName(name)
+      setProfileEmail(email)
     })
   }, [])
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (!target.closest('[data-profile-menu-root]')) {
+        setProfileMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    return () => document.removeEventListener('mousedown', handlePointerDown)
+  }, [])
+
+  const handleLogout = async () => {
+    setProfileMenuOpen(false)
+
+    if (supabase) {
+      await supabase.auth.signOut()
+    }
+
+    localStorage.removeItem('voiceover-demo-auth')
+    navigate('/login')
+  }
 
   const usagePercent = 0
   const minutesLeft = 60
@@ -61,7 +91,7 @@ function AppShell() {
       <Sidebar
         currentPage={currentPage}
         onNavigate={page => navigate(`/${page}`)}
-        onLogoClick={() => navigate('/')}
+        onLogoClick={() => navigate('/dashboard')}
         onToggleCollapse={() => setSidebarCollapsed(value => !value)}
         collapsed={sidebarCollapsed}
         usagePercent={usagePercent}
@@ -80,22 +110,19 @@ function AppShell() {
             borderBottom: '1px solid #151c2e',
           }}
         >
-          <button
-            type="button"
-            onClick={() => navigate('/')}
+          <div
             style={{
               color: '#4f5a72',
               fontSize: '13px',
               background: 'transparent',
               border: 'none',
-              cursor: 'pointer',
               padding: 0,
             }}
           >
             <span style={{ color: '#F0F4FF', fontWeight: 500 }}>Voiceover</span>
             <span style={{ margin: '0 6px' }}>/</span>
             <span style={{ textTransform: 'capitalize' }}>{currentPage}</span>
-          </button>
+          </div>
           <div className="flex items-center gap-3">
             <div
               className="flex items-center gap-2 rounded-lg px-3 py-1.5"
@@ -111,12 +138,64 @@ function AppShell() {
                 placeholder="Search scripts, voices..."
               />
             </div>
-            <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold cursor-pointer"
-              style={{ background: 'rgba(0,210,223,0.15)', color: '#00d2df', border: '1px solid rgba(0,210,223,0.2)' }}
-              onClick={() => navigate('/settings')}
-            >
-              {userInitial}
+            <div data-profile-menu-root style={{ position: 'relative' }}>
+              <button
+                type="button"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold cursor-pointer"
+                style={{ background: 'rgba(0,210,223,0.15)', color: '#00d2df', border: '1px solid rgba(0,210,223,0.2)' }}
+                onClick={() => setProfileMenuOpen(value => !value)}
+                aria-haspopup="menu"
+                aria-expanded={profileMenuOpen}
+              >
+                {userInitial}
+              </button>
+
+              {profileMenuOpen && (
+                <div
+                  className="absolute right-0 top-full mt-3 rounded-2xl border shadow-2xl"
+                  style={{
+                    width: 260,
+                    background: '#0d1118',
+                    borderColor: '#1e2a40',
+                    boxShadow: '0 20px 45px rgba(0,0,0,0.35)',
+                    zIndex: 50,
+                  }}
+                >
+                  <div className="flex items-center gap-3 border-b px-4 py-3" style={{ borderColor: '#151c2e' }}>
+                    <div
+                      className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold"
+                      style={{ background: 'rgba(0,210,223,0.15)', color: '#00d2df' }}
+                    >
+                      {userInitial}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold text-white">{profileName}</div>
+                      <div className="truncate text-xs text-[#8892aa]">{profileEmail || 'creator@voiceover.ai'}</div>
+                    </div>
+                  </div>
+
+                  <div className="p-2 text-sm">
+                    <button type="button" onClick={() => { setProfileMenuOpen(false); navigate('/settings') }} className="w-full rounded-xl px-3 py-2 text-left text-[#e7ecf6] hover:bg-[#111827]">Account Settings</button>
+                    <button type="button" onClick={() => { setProfileMenuOpen(false); navigate('/settings') }} className="w-full rounded-xl px-3 py-2 text-left text-[#e7ecf6] hover:bg-[#111827]">Security Settings</button>
+                    <button type="button" onClick={() => { setProfileMenuOpen(false); navigate('/history') }} className="w-full rounded-xl px-3 py-2 text-left text-[#e7ecf6] hover:bg-[#111827]">Cloud Save</button>
+                    <button type="button" onClick={() => { setProfileMenuOpen(false); navigate('/history') }} className="w-full rounded-xl px-3 py-2 text-left text-[#e7ecf6] hover:bg-[#111827]">File History</button>
+                    <button type="button" onClick={() => { setProfileMenuOpen(false); navigate('/billing') }} className="w-full rounded-xl px-3 py-2 text-left text-[#e7ecf6] hover:bg-[#111827]">Subscription</button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDarkMode(value => !value)}
+                      className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-[#e7ecf6] hover:bg-[#111827]"
+                    >
+                      <span>Dark mode</span>
+                      <span className="inline-flex h-5 w-9 items-center rounded-full px-1" style={{ background: darkMode ? 'rgba(0,210,223,0.2)' : '#1f2937' }}>
+                        <span className="h-3.5 w-3.5 rounded-full bg-white" style={{ transform: darkMode ? 'translateX(14px)' : 'translateX(0)', transition: 'transform 0.2s ease' }} />
+                      </span>
+                    </button>
+
+                    <button type="button" onClick={handleLogout} className="mt-2 w-full rounded-xl border px-3 py-2 text-left font-medium text-[#fca5a5]" style={{ borderColor: '#2a1f2b', background: 'rgba(239,68,68,0.06)' }}>Logout</button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>

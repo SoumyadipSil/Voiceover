@@ -1,21 +1,14 @@
-import { useState } from 'react'
-
-const entries = [
-  { id: 1, snippet: 'In the sweltering autumn of 476 AD, the Western Roman Empire did not collapse...', voice: 'Kabir', lang: 'HI/EN', date: 'Sep 21, 2026', duration: '2:45', size: '8.2 MB' },
-  { id: 2, snippet: 'The Mughal Empire at its zenith stretched from Kabul in the northwest to Dhaka in the east...', voice: 'Rohan', lang: 'EN (IN)', date: 'Sep 20, 2026', duration: '4:12', size: '12.4 MB' },
-  { id: 3, snippet: 'আমাজন বর্ষারণ্য পৃথিবীর বৃহত্তম গ্রীষ্মমণ্ডলীয় বনভূমি...', voice: 'Ananya', lang: 'BN', date: 'Sep 19, 2026', duration: '1:58', size: '5.8 MB' },
-  { id: 4, snippet: 'The black hole at the center of our galaxy — Sagittarius A* — contains the mass of 4 million suns...', voice: 'Dev', lang: 'EN (IN)', date: 'Sep 18, 2026', duration: '3:30', size: '10.2 MB' },
-  { id: 5, snippet: 'Napoleon\'s 100 Days — the most dramatic comeback in military history...', voice: 'Kabir', lang: 'HI/EN', date: 'Sep 17, 2026', duration: '5:44', size: '17.1 MB' },
-]
+const entries: Array<{
+  id: string
+  snippet: string
+  voice: string
+  lang: string
+  date: string
+  duration: string
+  size: string
+}> = []
 
 export default function History() {
-  const [searchQuery, setSearchQuery] = useState('')
-
-  const filtered = entries.filter(e =>
-    e.snippet.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    e.voice.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
   return (
     <div className="flex flex-col gap-5 p-5">
       {/* Header */}
@@ -28,24 +21,8 @@ export default function History() {
             Generation History
           </h1>
           <p style={{ color: '#4f5a72', fontSize: '13px', marginTop: 2 }}>
-            {entries.length} generations · 18m 9s total audio
+            Your latest generations will appear here.
           </p>
-        </div>
-        <div
-          className="flex items-center gap-2 rounded-xl px-3 py-2"
-          style={{ background: '#111520', border: '1px solid #1e2a40' }}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <circle cx="6" cy="6" r="5" stroke="#4f5a72" strokeWidth="1.3" />
-            <path d="M10 10l3 3" stroke="#4f5a72" strokeWidth="1.3" strokeLinecap="round" />
-          </svg>
-          <input
-            className="bg-transparent border-none outline-none text-sm"
-            style={{ color: '#F0F4FF', width: 200 }}
-            placeholder="Search generations..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-          />
         </div>
       </div>
 
@@ -54,30 +31,7 @@ export default function History() {
         className="rounded-xl overflow-hidden"
         style={{ background: '#0D0F17', border: '1px solid #1e2a40' }}
       >
-        {/* Header row */}
-        <div
-          className="grid grid-cols-12 px-5 py-3"
-          style={{ borderBottom: '1px solid #151c2e' }}
-        >
-          {['Script preview', '', 'Voice', 'Date', 'Duration', ''].map((h, i) => (
-            <div
-              key={i}
-              className={`${[7, 0, 2, 1, 1, 1][i] === 0 ? 'col-span-1' : ''}`}
-              style={{
-                gridColumn: `span ${[5, 2, 2, 2, 1, 0][i] || 1}`,
-                color: '#4f5a72',
-                fontSize: '11px',
-                fontWeight: 600,
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-              }}
-            >
-              {h}
-            </div>
-          ))}
-        </div>
-
-        {filtered.length === 0 ? (
+        {entries.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
@@ -97,13 +51,13 @@ export default function History() {
             </p>
           </div>
         ) : (
-          filtered.map((entry, i) => (
+          entries.map((entry, i) => (
             <div
               key={entry.id}
               className="grid px-5 py-4 items-center gap-2 transition-colors"
               style={{
                 gridTemplateColumns: '5fr 2fr 2fr 2fr 1fr',
-                borderBottom: i < filtered.length - 1 ? '1px solid #151c2e' : 'none',
+                borderBottom: i < entries.length - 1 ? '1px solid #151c2e' : 'none',
                 cursor: 'pointer',
               }}
               onMouseEnter={e => (e.currentTarget.style.background = '#111520')}

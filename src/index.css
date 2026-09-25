@@ -296,6 +296,182 @@ body {
   box-shadow: 0 0 0 1px rgba(0, 210, 223, 0.3), 0 8px 24px rgba(0, 210, 223, 0.15);
 }
 
+.voice-selection-modal {
+  max-height: calc(100vh - 64px);
+  background: #0d0f17 !important;
+  border-color: #1e2a40 !important;
+}
+
+.voice-selection-header,
+.voice-selection-tabs {
+  background: #0a0c13 !important;
+  border-color: #151c2e !important;
+}
+
+.voice-selection-header > div:first-child,
+.voice-selection-preview,
+.voice-selection-library {
+  color: #f0f4ff;
+}
+
+.voice-selection-body {
+  background: #090a0f !important;
+}
+
+.voice-selection-library,
+.voice-selection-preview {
+  background: #0d0f17 !important;
+  border-color: #1e2a40 !important;
+}
+
+.voice-selection-search,
+.voice-selection-filter {
+  background: #111520 !important;
+  border-color: #1e2a40 !important;
+  color: #8892aa !important;
+}
+
+.voice-selection-search input {
+  color: #f0f4ff !important;
+}
+
+.voice-selection-search input::placeholder {
+  color: #4f5a72 !important;
+}
+
+.voice-selection-card {
+  background: #111520 !important;
+  border-color: #1e2a40 !important;
+}
+
+.voice-selection-card:hover {
+  background: #151c2e !important;
+  border-color: rgba(0, 210, 223, 0.45) !important;
+}
+
+.voice-selection-card-active {
+  background: rgba(0, 210, 223, 0.1) !important;
+  border-color: #00d2df !important;
+  box-shadow: 0 0 0 2px rgba(0, 210, 223, 0.14), 0 8px 18px rgba(0, 210, 223, 0.1);
+}
+
+.voice-selection-card .text-\[\#0f172a\],
+.voice-selection-preview .text-\[\#0f172a\],
+.voice-selection-preview .text-\[\#1f2937\] {
+  color: #f0f4ff !important;
+}
+
+.voice-selection-card .text-\[\#475569\],
+.voice-selection-preview .text-\[\#475569\],
+.voice-selection-preview .text-\[\#64748b\] {
+  color: #8892aa !important;
+}
+
+.voice-selection-card .bg-\[\#edf4ff\] {
+  background: rgba(0, 210, 223, 0.12) !important;
+  color: #00d2df !important;
+}
+
+.voice-selection-card .bg-\[\#ebfdf5\] {
+  background: rgba(16, 240, 176, 0.1) !important;
+  border-color: rgba(16, 240, 176, 0.25) !important;
+  color: #10f0b0 !important;
+}
+
+.voice-selection-languages,
+.voice-selection-collab {
+  background: #111520 !important;
+  border-color: #1e2a40 !important;
+  color: #8892aa !important;
+}
+
+.voice-selection-languages .bg-white {
+  background: #0d0f17 !important;
+  border-color: #253050 !important;
+  color: #8892aa !important;
+}
+
+.voice-selection-collab .text-\[\#1d4ed8\] {
+  color: #00d2df !important;
+}
+
+.voice-selection-card {
+  min-height: 122px;
+  border-color: #dfe7f3;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.voice-selection-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.08);
+}
+
+.voice-selection-card-active {
+  border-color: #4c91f7 !important;
+  box-shadow: 0 0 0 2px rgba(76, 145, 247, 0.14), 0 8px 18px rgba(37, 99, 235, 0.1);
+}
+
+.voice-selection-tab,
+.voice-selection-filter,
+.voice-selection-close {
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.voice-selection-tab:not(.voice-selection-tab-active):hover,
+.voice-selection-filter:hover,
+.voice-selection-close:hover {
+  border-color: #9cc3ff;
+  background: #f8fbff;
+  color: #1d4ed8;
+}
+
+.voice-selection-tab:focus-visible,
+.voice-selection-filter:focus-visible,
+.voice-selection-card:focus-visible,
+.voice-selection-close:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.25);
+  outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+  .voice-selection-backdrop {
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .voice-selection-modal {
+    max-height: 100vh;
+    border-radius: 0;
+    overflow-y: auto;
+  }
+
+  .voice-selection-tabs,
+  .voice-selection-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .voice-selection-collection-tab {
+    margin-left: 0;
+  }
+
+  .voice-selection-toolbar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .voice-selection-search {
+    grid-column: 1 / -1;
+  }
+
+  .voice-selection-filter {
+    justify-content: space-between;
+  }
+
+  .voice-selection-preview {
+    order: -1;
+  }
+}
+
 .pricing-card {
   background: #0D0F17;
   border: 1px solid #1e2a40;
