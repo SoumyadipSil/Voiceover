@@ -331,6 +331,7 @@ export default function Dashboard({ onShowPaywall }: { onShowPaywall?: () => voi
   const [selectedModel, setSelectedModel] = useState<TtsModelId>('nvidia/magpie-tts-zeroshot')
   const [providerVoice, setProviderVoice] = useState('flux-priya-en')
   const [referenceAudio, setReferenceAudio] = useState('')
+  const [referenceAudioName, setReferenceAudioName] = useState('')
   const [voiceSearch, setVoiceSearch] = useState('')
   const [voiceGender, setVoiceGender] = useState('All genders')
   const [voiceAccent, setVoiceAccent] = useState('All accents')
@@ -367,6 +368,11 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
   const handleGenerate = async () => {
     if (estDurationSecs > freeMinutes) {
       openPaywall()
+      return
+    }
+
+    if (selectedModel === 'nvidia/magpie-tts-zeroshot' && !referenceAudio) {
+      setGenerationError('Upload a reference audio sample and wait until it says ready before generating with NVIDIA.')
       return
     }
 
@@ -446,9 +452,20 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
     }
 
     const reader = new FileReader()
-    reader.onload = () => setReferenceAudio(String(reader.result))
+    reader.onload = () => {
+      setReferenceAudio(String(reader.result))
+      setReferenceAudioName(file.name)
+      setGenerationError('')
+    }
+    reader.onerror = () => {
+      setReferenceAudio('')
+      setReferenceAudioName('')
+      setGenerationError('The reference audio could not be read. Choose the file again.')
+    }
     reader.readAsDataURL(file)
-    setGenerationError('')
+    setReferenceAudio('')
+    setReferenceAudioName('')
+    setGenerationError('Reading reference audio...')
   }
 
   const handleModelChange = (modelId: TtsModelId) => {
