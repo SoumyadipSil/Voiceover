@@ -20,9 +20,9 @@ interface VercelResponse extends ServerResponse {
 }
 
 const NVIDIA_MODEL = 'nvidia/magpie-tts-zeroshot'
-const OPENROUTER_MODELS = new Set(['fish-audio/s2.1-pro-free', 'deepgram/flux-tts'])
+const OPENROUTER_MODELS = new Set(['fish-audio/s2.1-pro-free:free', 'deepgram/flux-tts:free'])
 const NVIDIA_ENDPOINT = process.env.NVIDIA_TTS_URL || 'https://ai.api.nvidia.com/v1/audio/speech'
-const OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/audio/speech'
+const OPENROUTER_ENDPOINT = process.env.OPENROUTER_TTS_URL || 'https://openrouter.ai/api/v1/audio/speech'
 
 function errorResponse(res: VercelResponse, status: number, message: string) {
   return res.status(status).json({ error: message })

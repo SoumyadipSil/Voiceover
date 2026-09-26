@@ -1,4 +1,4 @@
-export type TtsModelId = 'nvidia/magpie-tts-zeroshot' | 'fish-audio/s2.1-pro-free' | 'deepgram/flux-tts'
+export type TtsModelId = 'nvidia/magpie-tts-zeroshot' | 'fish-audio/s2.1-pro-free:free' | 'deepgram/flux-tts:free'
 
 export type TtsResponseFormat = 'mp3' | 'pcm'
 
@@ -17,13 +17,13 @@ export const ttsModels: Array<{
     requiresReferenceAudio: true,
   },
   {
-    id: 'deepgram/flux-tts',
+    id: 'deepgram/flux-tts:free',
     name: 'Flux TTS',
     provider: 'OpenRouter',
     description: 'Fast production voices with a broad English voice library.',
   },
   {
-    id: 'fish-audio/s2.1-pro-free',
+    id: 'fish-audio/s2.1-pro-free:free',
     name: 'S2.1 Pro',
     provider: 'OpenRouter',
     description: 'Natural expressive speech with provider-specific voice IDs.',

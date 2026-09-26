@@ -54,6 +54,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 # Server-only TTS keys. Never expose these with a VITE_ prefix.
 NVIDIA_API_KEY=your-nvidia-api-key
 OPENROUTER_API_KEY=your-openrouter-api-key
+OPENROUTER_TTS_URL=https://openrouter.ai/api/v1/audio/speech
 # Optional for self-hosted NVIDIA NIM:
 # NVIDIA_TTS_URL=https://ai.api.nvidia.com/v1/audio/speech
 ```

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import PaywallModal from '../components/PaywallModal'
 import { deepgramVoices, fishAudioVoice, synthesizeSpeech, ttsModels, type TtsModelId } from '../lib/tts'
 
@@ -59,16 +59,86 @@ const nvidiaVoiceOptions: VoiceOption[] = [{
 
 const voiceCatalog: Record<TtsModelId, VoiceOption[]> = {
   'nvidia/magpie-tts-zeroshot': nvidiaVoiceOptions,
-  'deepgram/flux-tts': deepgramVoiceOptions,
-  'fish-audio/s2.1-pro-free': fishVoiceOptions,
+  'deepgram/flux-tts:free': deepgramVoiceOptions,
+  'fish-audio/s2.1-pro-free:free': fishVoiceOptions,
 }
 
 const emotions = ['Neutral', 'Calm', 'Happy', 'Sad', 'Dramatic', 'Fearful', 'Energetic', 'Whisper']
 
 const waveBarHeights = [12, 20, 36, 24, 48, 32, 16, 44, 36, 56, 28, 40, 52, 20, 60, 36, 48, 24, 40, 64, 28, 52, 16, 44, 36, 56, 24, 48, 32, 60, 20, 44, 36, 52, 28, 40, 64, 24, 16, 48, 28, 36, 52, 20, 44, 60, 32, 40, 16, 24, 48, 36, 56, 28, 44, 20, 60, 32, 48, 24, 36, 52, 16, 40]
 
-function WaveformPlayer({ isPlaying, audioUrl }: { isPlaying: boolean; audioUrl: string }) {
-  const playheadPos = 42
+function WaveformPlayer({
+  isPlaying,
+  audioUrl,
+  onPlayingChange,
+}: {
+  isPlaying: boolean
+  audioUrl: string
+  onPlayingChange: (playing: boolean) => void
+}) {
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const waveformRef = useRef<HTMLDivElement>(null)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [playbackRate, setPlaybackRate] = useState(1)
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio || !audioUrl) return
+
+    audio.load()
+    audio.play().then(() => onPlayingChange(true)).catch(() => onPlayingChange(false))
+  }, [audioUrl, onPlayingChange])
+
+  const togglePlayback = () => {
+    const audio = audioRef.current
+    if (!audioUrl || !audio) return
+
+    if (audio.paused) {
+      audio.play().then(() => onPlayingChange(true)).catch(() => onPlayingChange(false))
+    } else {
+      audio.pause()
+      onPlayingChange(false)
+    }
+  }
+
+  const seekBy = (seconds: number) => {
+    const audio = audioRef.current
+    if (!audioUrl || !audio) return
+    audio.currentTime = Math.max(0, Math.min(audio.duration || 0, audio.currentTime + seconds))
+  }
+
+  const seekToPointer = (event: React.MouseEvent<HTMLDivElement>) => {
+    const audio = audioRef.current
+    const waveform = waveformRef.current
+    if (!audioUrl || !audio || !waveform || !duration) return
+    const bounds = waveform.getBoundingClientRect()
+    const position = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width))
+    audio.currentTime = position * duration
+  }
+
+  const changePlaybackRate = () => {
+    const nextRate = playbackRate === 1.25 ? 0.75 : playbackRate === 0.75 ? 1 : 1.25
+    setPlaybackRate(nextRate)
+    if (audioRef.current) audioRef.current.playbackRate = nextRate
+  }
+
+  const downloadAudio = () => {
+    if (!audioUrl) return
+    const link = document.createElement('a')
+    link.href = audioUrl
+    link.download = 'voiceover-generation.mp3'
+    link.click()
+  }
+
+  const formatTime = (seconds: number) => {
+    if (!Number.isFinite(seconds)) return '00:00'
+    const minutes = Math.floor(seconds / 60)
+    const remainingSeconds = Math.floor(seconds % 60)
+    return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`
+  }
+
+  const progress = duration > 0 ? currentTime / duration : 0
 
   return (
     <div
@@ -77,7 +147,7 @@ function WaveformPlayer({ isPlaying, audioUrl }: { isPlaying: boolean; audioUrl:
     >
       <div className="flex items-center justify-between mb-2">
         <span style={{ color: '#00d2df', fontSize: '12px', fontFamily: 'monospace', fontWeight: 700 }}>
-          00:42.10
+          {formatTime(currentTime)}
         </span>
         <span
           style={{ color: '#f59e0b', fontSize: '12px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 4 }}
@@ -88,12 +158,20 @@ function WaveformPlayer({ isPlaying, audioUrl }: { isPlaying: boolean; audioUrl:
           </svg>
           Paywall at 01:00
         </span>
-        <span style={{ color: '#4f5a72', fontSize: '12px', fontFamily: 'monospace' }}>02:45.00</span>
+        <span style={{ color: '#4f5a72', fontSize: '12px', fontFamily: 'monospace' }}>{formatTime(duration)}</span>
       </div>
 
       <div
+        ref={waveformRef}
+        onClick={seekToPointer}
+        role="slider"
+        aria-label="Audio progress"
+        aria-valuemin={0}
+        aria-valuemax={duration || 0}
+        aria-valuenow={currentTime}
+        tabIndex={audioUrl ? 0 : -1}
         className="relative flex items-center gap-[2px] overflow-hidden"
-        style={{ height: 72 }}
+        style={{ height: 72, cursor: audioUrl ? 'pointer' : 'default' }}
       >
         {waveBarHeights.map((h, i) => (
           <div
@@ -103,8 +181,8 @@ function WaveformPlayer({ isPlaying, audioUrl }: { isPlaying: boolean; audioUrl:
               width: '3px',
               height: `${h}px`,
               borderRadius: '2px',
-              background: i < playheadPos ? '#00d2df' : '#1e2a40',
-              opacity: i < playheadPos ? (0.4 + (h / 64) * 0.6) : 0.3,
+              background: i / waveBarHeights.length < progress ? '#00d2df' : '#1e2a40',
+              opacity: i / waveBarHeights.length < progress ? (0.4 + (h / 64) * 0.6) : 0.3,
               flexShrink: 0,
               animationDuration: isPlaying ? `${0.8 + (i % 7) * 0.12}s` : undefined,
               animationDelay: isPlaying ? `${(i % 11) * 0.08}s` : undefined,
@@ -115,23 +193,22 @@ function WaveformPlayer({ isPlaying, audioUrl }: { isPlaying: boolean; audioUrl:
 
         <div
           className="absolute top-0 bottom-0 w-0.5 flex flex-col items-center pointer-events-none"
-          style={{ left: `${(playheadPos / waveBarHeights.length) * 100}%`, background: 'rgba(240,244,255,0.9)' }}
+          style={{ left: `${progress * 100}%`, background: 'rgba(240,244,255,0.9)' }}
         >
           <div
             style={{ width: 10, height: 10, borderRadius: '50%', background: '#00d2df', boxShadow: '0 0 8px #00d2df', marginTop: -5 }}
           />
         </div>
 
-        <div
-          className="absolute top-0 bottom-0 right-0 flex items-center justify-center"
-          style={{ width: `${((waveBarHeights.length - playheadPos - 5) / waveBarHeights.length) * 100}%`, background: 'linear-gradient(90deg, transparent, rgba(9,10,15,0.6))' }}
-        />
       </div>
 
       <div className="flex items-center justify-between mt-3">
         <div className="flex items-center gap-2">
           <button
-            style={{ width: 32, height: 32, borderRadius: 8, background: '#111520', border: '1px solid #1e2a40', color: '#8892aa', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            type="button"
+            onClick={() => seekBy(-10)}
+            aria-label="Skip back 10 seconds"
+            style={{ width: 32, height: 32, borderRadius: 8, background: '#111520', border: '1px solid #1e2a40', color: '#8892aa', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: audioUrl ? 'pointer' : 'default', opacity: audioUrl ? 1 : 0.5 }}
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M12 2L2 7l10 5V2z" fill="currentColor" opacity="0.5" />
@@ -139,11 +216,15 @@ function WaveformPlayer({ isPlaying, audioUrl }: { isPlaying: boolean; audioUrl:
             </svg>
           </button>
           <button
+            type="button"
+            onClick={togglePlayback}
+            aria-label={isPlaying ? 'Pause audio' : 'Play audio'}
             style={{
               width: 40, height: 40, borderRadius: '50%', background: '#00d2df', color: '#090A0F',
               display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
               boxShadow: '0 0 16px rgba(0,210,223,0.4)',
               border: 'none',
+              opacity: audioUrl ? 1 : 0.5,
             }}
           >
             {isPlaying ? (
@@ -158,7 +239,10 @@ function WaveformPlayer({ isPlaying, audioUrl }: { isPlaying: boolean; audioUrl:
             )}
           </button>
           <button
-            style={{ width: 32, height: 32, borderRadius: 8, background: '#111520', border: '1px solid #1e2a40', color: '#8892aa', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            type="button"
+            onClick={() => seekBy(10)}
+            aria-label="Skip forward 10 seconds"
+            style={{ width: 32, height: 32, borderRadius: 8, background: '#111520', border: '1px solid #1e2a40', color: '#8892aa', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: audioUrl ? 'pointer' : 'default', opacity: audioUrl ? 1 : 0.5 }}
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M2 2l10 5-10 5V2z" fill="currentColor" opacity="0.5" />
@@ -172,13 +256,15 @@ function WaveformPlayer({ isPlaying, audioUrl }: { isPlaying: boolean; audioUrl:
             {['0.75x', '1.0x', '1.25x'].map(s => (
               <button
                 key={s}
+                type="button"
+                onClick={() => { const rate = Number.parseFloat(s); setPlaybackRate(rate); if (audioRef.current) audioRef.current.playbackRate = rate }}
                 style={{
                   padding: '4px 8px',
                   fontSize: '11px',
                   fontFamily: 'monospace',
-                  color: s === '1.0x' ? '#00d2df' : '#4f5a72',
-                  fontWeight: s === '1.0x' ? 700 : 400,
-                  background: s === '1.0x' ? 'rgba(0,210,223,0.1)' : 'transparent',
+                  color: playbackRate === Number.parseFloat(s) ? '#00d2df' : '#4f5a72',
+                  fontWeight: playbackRate === Number.parseFloat(s) ? 700 : 400,
+                  background: playbackRate === Number.parseFloat(s) ? 'rgba(0,210,223,0.1)' : 'transparent',
                   border: 'none',
                   cursor: 'pointer',
                 }}
@@ -191,7 +277,12 @@ function WaveformPlayer({ isPlaying, audioUrl }: { isPlaying: boolean; audioUrl:
 
         <div className="flex items-center gap-2">
           <button
+            type="button"
+            onClick={downloadAudio}
+            disabled={!audioUrl}
+            aria-label="Download MP3"
             className="btn-ghost px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5"
+            style={{ opacity: audioUrl ? 1 : 0.5 }}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M6 1v7M2.5 5l3.5 3.5L9.5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
@@ -200,18 +291,36 @@ function WaveformPlayer({ isPlaying, audioUrl }: { isPlaying: boolean; audioUrl:
             Export MP3
           </button>
           <button
+            type="button"
+            onClick={changePlaybackRate}
+            disabled={!audioUrl}
+            aria-label="Change playback speed"
             className="btn-ghost px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5"
+            style={{ opacity: audioUrl ? 1 : 0.5 }}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <circle cx="6" cy="6" r="5.5" stroke="currentColor" strokeWidth="1.2" />
               <path d="M4 6h4M6 4v4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
             </svg>
-            Regen Take
+            Speed {playbackRate.toFixed(2)}x
           </button>
         </div>
       </div>
 
-      {audioUrl && <audio className="mt-3 w-full" controls src={audioUrl} />}
+      <audio
+        ref={audioRef}
+        src={audioUrl || undefined}
+        preload="metadata"
+        className="hidden"
+        onLoadedMetadata={event => setDuration(event.currentTarget.duration)}
+        onTimeUpdate={event => setCurrentTime(event.currentTarget.currentTime)}
+        onPlay={() => onPlayingChange(true)}
+        onPause={() => onPlayingChange(false)}
+        onEnded={() => {
+          setCurrentTime(0)
+          onPlayingChange(false)
+        }}
+      />
     </div>
   )
 }
@@ -239,6 +348,7 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
   const [pace, setPace] = useState(1.05)
   const [pitch, setPitch] = useState(-1.2)
   const [breathiness, setBreathiness] = useState(18)
+  const scriptInputRef = useRef<HTMLTextAreaElement>(null)
 
   const wordCount = script.trim() ? script.trim().split(/\s+/).length : 0
   const charCount = script.length
@@ -268,7 +378,7 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
       const audioBlob = await synthesizeSpeech({
         model: selectedModel,
         input: script.trim(),
-        voice: selectedModel === 'nvidia/magpie-tts-zeroshot' ? undefined : selectedModel === 'fish-audio/s2.1-pro-free' ? fishAudioVoice : providerVoice,
+        voice: selectedModel === 'nvidia/magpie-tts-zeroshot' ? undefined : selectedModel === 'fish-audio/s2.1-pro-free:free' ? fishAudioVoice : providerVoice,
         referenceAudio: selectedModel === 'nvidia/magpie-tts-zeroshot' ? referenceAudio : undefined,
         responseFormat: 'mp3',
       })
@@ -283,6 +393,24 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
       setGenerating(false)
       setGenerationError(error instanceof Error ? error.message : 'Unable to generate audio.')
     }
+  }
+
+  const insertScriptCommand = (command: 'pause' | 'emphasis' | 'whisper') => {
+    const textarea = scriptInputRef.current
+    const start = textarea?.selectionStart ?? script.length
+    const end = textarea?.selectionEnd ?? start
+    const selectedText = script.slice(start, end)
+    const marker = command === 'pause' ? '[pause=1.0s]' : command === 'emphasis' ? '[emphasis]' : '[whisper]'
+    const closingMarker = command === 'pause' ? '' : `[/ ${command}]`.replace('/ ', '/')
+    const insertion = selectedText ? `${marker}${selectedText}${closingMarker}` : `${marker} `
+    const nextScript = `${script.slice(0, start)}${insertion}${script.slice(end)}`
+    setScript(nextScript)
+
+    requestAnimationFrame(() => {
+      textarea?.focus()
+      const cursorPosition = start + insertion.length
+      textarea?.setSelectionRange(cursorPosition, cursorPosition)
+    })
   }
 
   const availableVoices = voiceCatalog[selectedModel]
@@ -330,7 +458,7 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
     setVoiceGender('All genders')
     setVoiceAccent('All accents')
     setVoiceCategory('All categories')
-    if (modelId === 'deepgram/flux-tts') setProviderVoice(deepgramVoices[0])
+    if (modelId === 'deepgram/flux-tts:free') setProviderVoice(deepgramVoices[0])
   }
 
   return (
@@ -355,15 +483,12 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
                     <span className="font-medium text-[#4f5a72]">—</span>
                       <span className="font-medium text-[#8892aa]">{selectedVoiceSummary.style}</span>
                   </div>
-                    <div className="text-[11px] uppercase tracking-[0.12em] text-[#4f5a72]">{selectedVoiceSummary.lang} · Aura neural v3.4</div>
+                    <div className="text-[11px] uppercase tracking-[0.12em] text-[#4f5a72]">{selectedVoiceSummary.lang} · {selectedModelConfig.provider} · {selectedModelConfig.name}</div>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
-                <button type="button" className="rounded-lg border px-3 py-1.5 text-[11px] font-medium" style={{ background: '#111520', borderColor: '#1e2a40', color: '#8892aa' }}>
-                  Voice
-                </button>
-                  <button type="button" onClick={() => setShowVoicePanel(true)} className="rounded-lg border px-3 py-1.5 text-[11px] font-medium" style={{ background: '#111520', borderColor: '#1e2a40', color: '#8892aa' }}>
+                <button type="button" onClick={() => setShowVoicePanel(true)} className="rounded-lg border px-3 py-1.5 text-[11px] font-medium" style={{ background: '#111520', borderColor: '#1e2a40', color: '#8892aa' }}>
                   Change Voice
                 </button>
               </div>
@@ -376,13 +501,13 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
           >
             <div className="mb-3 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <button type="button" className="rounded-lg border px-2.5 py-1.5 text-[11px] font-medium" style={{ background: '#111520', borderColor: '#1e2a40', color: '#8892aa' }}>
+                <button type="button" onClick={() => insertScriptCommand('pause')} className="rounded-lg border px-2.5 py-1.5 text-[11px] font-medium" style={{ background: '#111520', borderColor: '#1e2a40', color: '#8892aa' }}>
                   + Insert Pause
                 </button>
-                <button type="button" className="rounded-lg border px-2.5 py-1.5 text-[11px] font-medium" style={{ background: '#111520', borderColor: '#1e2a40', color: '#8892aa' }}>
+                <button type="button" onClick={() => insertScriptCommand('emphasis')} className="rounded-lg border px-2.5 py-1.5 text-[11px] font-medium" style={{ background: '#111520', borderColor: '#1e2a40', color: '#8892aa' }}>
                   Emphasis
                 </button>
-                <button type="button" className="rounded-lg border px-2.5 py-1.5 text-[11px] font-medium" style={{ background: '#111520', borderColor: '#1e2a40', color: '#8892aa' }}>
+                <button type="button" onClick={() => insertScriptCommand('whisper')} className="rounded-lg border px-2.5 py-1.5 text-[11px] font-medium" style={{ background: '#111520', borderColor: '#1e2a40', color: '#8892aa' }}>
                   Whisper
                 </button>
               </div>
@@ -399,6 +524,7 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
 
             <div className="rounded-xl border p-4" style={{ background: '#111520', borderColor: '#151c2e' }}>
               <textarea
+                ref={scriptInputRef}
                 className="w-full resize-none border-none bg-transparent text-[15px] leading-8 outline-none"
                 style={{ color: '#F0F4FF', minHeight: 170, fontFamily: 'inherit' }}
                 value={script}
@@ -434,7 +560,7 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
 
             <div className="mt-4 flex items-center justify-between gap-3">
               <div className="text-[12px] text-[#4f5a72]">
-                Engine: <span style={{ color: '#00d2df' }}>Aura-v3.4 Neural (Sub-40ms)</span>
+                Engine: <span style={{ color: '#00d2df' }}>{selectedModelConfig.provider} · {selectedModelConfig.name}</span>
               </div>
 
               <button
@@ -483,7 +609,7 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
               </button>
             </div>
 
-            <WaveformPlayer isPlaying={isPlaying} audioUrl={audioUrl} />
+            <WaveformPlayer isPlaying={isPlaying} audioUrl={audioUrl} onPlayingChange={setIsPlaying} />
           </div>
         </div>
 
@@ -674,7 +800,7 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
                       type="button"
                       onClick={() => {
                         setSelectedVoice(voiceIndex)
-                        if (selectedModel === 'deepgram/flux-tts') setProviderVoice(voice.id)
+                        if (selectedModel === 'deepgram/flux-tts:free') setProviderVoice(voice.id)
                       }}
                       className={`voice-selection-card rounded-2xl border p-4 text-left transition hover:border-[#9cc3ff] hover:bg-[#f8fbff] ${selectedVoice === voiceIndex ? 'voice-selection-card-active' : ''}`}
                       style={{
@@ -723,7 +849,7 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
                       <input type="file" accept="audio/*" onChange={handleReferenceAudioChange} className="mt-3 block w-full text-xs text-[#8892aa]" />
                       {referenceAudio && <span className="mt-2 block text-[#10f0b0]">Reference sample ready</span>}
                     </label>
-                  ) : selectedModel === 'fish-audio/s2.1-pro-free' ? (
+                  ) : selectedModel === 'fish-audio/s2.1-pro-free:free' ? (
                     <p className="text-xs leading-5 text-[#8892aa]">This provider uses a fixed provider voice ID. The model is ready for text-only synthesis.</p>
                   ) : (
                     <select value={providerVoice} onChange={event => setProviderVoice(event.target.value)} className="w-full rounded-lg border border-[#1e2a40] bg-[#111520] px-3 py-2 text-xs text-[#f0f4ff] outline-none">

@@ -1,13 +1,16 @@
-import { defineConfig, type HtmlTagDescriptor, type Plugin } from 'vite'
+import { defineConfig, loadEnv, type Connect, type HtmlTagDescriptor, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
+import type { ServerResponse } from 'node:http'
+import speechHandler from './api/speech'
 
 import siteConfiguration from './.figma/make/site.json'
 
 
 // Vite config — https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
   // .figma/make/deploy-preview passes `--mode development` for cached-preview builds.
   const emitSourcemaps = mode === 'development'
 
@@ -21,6 +24,7 @@ export default defineConfig(({ mode }) => {
 react(),
       tailwindcss(),
       figmaSiteConfiguration(siteConfiguration),
+      localSpeechApi(env),
       figmaErrorOverlayReplay(),
       figmaReactRefreshBoundaryFallback(),
       figmaMakeKitPlugin({ storiesGlob: '/src/**/*.stories.{ts,tsx,js,jsx}' }),
@@ -32,7 +36,7 @@ react(),
     },
     server: {
       host: process.env.FIGMA_DEV_SERVER_HOST || '0.0.0.0',
-      port: parseInt(process.env.PORT || '8443'),
+      port: parseInt(env.PORT || process.env.PORT || '8443'),
       strictPort: true,
       watch: {
         ignored: [
@@ -42,10 +46,84 @@ react(),
     },
     preview: {
       host: process.env.FIGMA_DEV_SERVER_HOST || '0.0.0.0',
-      port: parseInt(process.env.PORT || '8443'),
+      port: parseInt(env.PORT || process.env.PORT || '8443'),
     },
   }
 })
+
+function localSpeechApi(env: Record<string, string>): Plugin {
+  return {
+    name: 'local-speech-api',
+    configureServer(server) {
+      const serverEnvKeys = [
+        'NVIDIA_API_KEY',
+        'NVIDIA_TTS_URL',
+        'OPENROUTER_API_KEY',
+        'OPENROUTER_TTS_URL',
+        'OPENROUTER_SITE_URL',
+      ]
+
+      for (const key of serverEnvKeys) {
+        if (env[key] && !process.env[key]) process.env[key] = env[key]
+      }
+
+      server.middlewares.use('/api/speech', async (req, res, next) => {
+        if (req.method !== 'POST') return next()
+
+        try {
+          const body = await readRequestBody(req)
+          const response = createVercelResponse(res)
+          await (speechHandler as unknown as (request: unknown, response: unknown) => Promise<unknown>)({ ...req, body }, response)
+        } catch (error) {
+          if (res.headersSent) return
+          res.statusCode = 400
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Invalid speech request.' }))
+        }
+      })
+    },
+  }
+}
+
+function readRequestBody(req: Connect.IncomingMessage): Promise<Record<string, unknown>> {
+  return new Promise((resolve, reject) => {
+    let raw = ''
+    req.on('data', chunk => { raw += chunk })
+    req.on('end', () => {
+      try {
+        resolve(raw ? JSON.parse(raw) as Record<string, unknown> : {})
+      } catch {
+        reject(new Error('Request body must be valid JSON.'))
+      }
+    })
+    req.on('error', reject)
+  })
+}
+
+function createVercelResponse(res: ServerResponse) {
+  const response = {
+    status(code: number) {
+      res.statusCode = code
+      return response
+    },
+    json(payload: unknown) {
+      res.statusCode = res.statusCode || 200
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify(payload))
+      return response
+    },
+    send(payload: Buffer) {
+      res.end(payload)
+      return response
+    },
+    setHeader(name: string, value: number | string) {
+      res.setHeader(name, value)
+      return response
+    },
+  }
+
+  return response
+}
 
 type FigmaSiteConfiguration = {
   title?: string
