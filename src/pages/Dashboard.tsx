@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import PaywallModal from '../components/PaywallModal'
-import { deepgramVoices, fishAudioVoice, synthesizeSpeech, ttsModels, type TtsModelId } from '../lib/tts'
+import { deepgramVoices, fishAudioVoice, nvidiaVoice, synthesizeSpeech, ttsModels, type TtsModelId } from '../lib/tts'
 
 const voices = [
   { name: 'Kabir', lang: 'HI / EN', style: 'Warm Narrative', avatar: 'K' },
@@ -384,7 +384,7 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
       const audioBlob = await synthesizeSpeech({
         model: selectedModel,
         input: script.trim(),
-        voice: selectedModel === 'nvidia/magpie-tts-zeroshot' ? undefined : selectedModel === 'fish-audio/s2.1-pro-free:free' ? fishAudioVoice : providerVoice,
+        voice: selectedModel === 'nvidia/magpie-tts-zeroshot' ? nvidiaVoice : selectedModel === 'fish-audio/s2.1-pro-free:free' ? fishAudioVoice : providerVoice,
         referenceAudio: selectedModel === 'nvidia/magpie-tts-zeroshot' ? referenceAudio : undefined,
         responseFormat: 'mp3',
       })

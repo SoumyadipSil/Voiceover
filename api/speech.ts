@@ -20,6 +20,7 @@ interface VercelResponse extends ServerResponse {
 }
 
 const NVIDIA_MODEL = 'nvidia/magpie-tts-zeroshot'
+const NVIDIA_VOICE = 'Magpie-Multilingual.EN-US.Aria'
 const OPENROUTER_MODELS = new Set(['fish-audio/s2.1-pro-free:free', 'deepgram/flux-tts:free'])
 const NVIDIA_ENDPOINT = process.env.NVIDIA_TTS_URL || 'https://ai.api.nvidia.com/v1/audio/speech'
 const OPENROUTER_ENDPOINT = process.env.OPENROUTER_TTS_URL || 'https://openrouter.ai/api/v1/audio/speech'
@@ -71,7 +72,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (voice) providerPayload.voice = voice
   if (language) providerPayload.language = language
-  if (isNvidia && referenceAudio) providerPayload.audio_prompt = referenceAudio
+  if (isNvidia && referenceAudio) {
+    providerPayload.voice = voice || NVIDIA_VOICE
+    providerPayload.audio_prompt = referenceAudio.replace(/^data:[^;]+;base64,/, '')
+  }
 
   try {
     const providerResponse = await fetch(isNvidia ? NVIDIA_ENDPOINT : OPENROUTER_ENDPOINT, {

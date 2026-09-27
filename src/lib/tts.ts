@@ -42,6 +42,7 @@ export const deepgramVoices = [
 ]
 
 export const fishAudioVoice = 'b347db033a6549378b48d00acb0d06cd'
+export const nvidiaVoice = 'Magpie-Multilingual.EN-US.Aria'
 
 export interface SynthesizeSpeechRequest {
   model: TtsModelId
