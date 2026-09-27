@@ -350,6 +350,7 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
   const [pitch, setPitch] = useState(-1.2)
   const [breathiness, setBreathiness] = useState(18)
   const scriptInputRef = useRef<HTMLTextAreaElement>(null)
+  const referenceAudioInputRef = useRef<HTMLInputElement>(null)
 
   const wordCount = script.trim() ? script.trim().split(/\s+/).length : 0
   const charCount = script.length
@@ -373,6 +374,7 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
 
     if (selectedModel === 'nvidia/magpie-tts-zeroshot' && !referenceAudio) {
       setGenerationError('Upload a reference audio sample and wait until it says ready before generating with NVIDIA.')
+      setShowVoicePanel(true)
       return
     }
 
@@ -580,32 +582,58 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
                 Engine: <span style={{ color: '#00d2df' }}>{selectedModelConfig.provider} · {selectedModelConfig.name}</span>
               </div>
 
-              <button
-                type="button"
-                onClick={handleGenerate}
-                className="flex items-center gap-2 rounded-xl px-7 py-3 text-sm font-semibold"
-                disabled={generating || !script.trim()}
-                style={{
-                  background: '#00d2df',
-                  color: '#090A0F',
-                  boxShadow: '0 0 24px rgba(0,210,223,0.35)',
-                  opacity: generating || !script.trim() ? 0.7 : 1,
-                }}
-              >
-                {generating ? (
+              <div className="flex items-center gap-2">
+                {selectedModel === 'nvidia/magpie-tts-zeroshot' && (
                   <>
-                    <span className="h-4 w-4 rounded-full border-2 border-[#090A0F]/30 border-t-[#090A0F]" style={{ display: 'inline-block', animation: 'spin-slow 0.7s linear infinite' }} />
-                    Synthesizing voice...
-                  </>
-                ) : (
-                  <>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                      <path d="M8 1L2 7h4v8h4V7h4L8 1z" />
-                    </svg>
-                    Generate Studio Audio
+                    <input
+                      ref={referenceAudioInputRef}
+                      type="file"
+                      accept="audio/*"
+                      onChange={handleReferenceAudioChange}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => referenceAudioInputRef.current?.click()}
+                      className="rounded-xl border px-4 py-3 text-sm font-semibold"
+                      style={{
+                        background: referenceAudio ? 'rgba(16,240,176,0.08)' : '#111520',
+                        borderColor: referenceAudio ? 'rgba(16,240,176,0.45)' : '#1e2a40',
+                        color: referenceAudio ? '#10f0b0' : '#8892aa',
+                      }}
+                    >
+                      {referenceAudio ? 'Replace reference voice' : 'Add reference voice'}
+                    </button>
                   </>
                 )}
-              </button>
+
+                <button
+                  type="button"
+                  onClick={handleGenerate}
+                  className="flex items-center gap-2 rounded-xl px-7 py-3 text-sm font-semibold"
+                  disabled={generating || !script.trim()}
+                  style={{
+                    background: '#00d2df',
+                    color: '#090A0F',
+                    boxShadow: '0 0 24px rgba(0,210,223,0.35)',
+                    opacity: generating || !script.trim() ? 0.7 : 1,
+                  }}
+                >
+                  {generating ? (
+                    <>
+                      <span className="h-4 w-4 rounded-full border-2 border-[#090A0F]/30 border-t-[#090A0F]" style={{ display: 'inline-block', animation: 'spin-slow 0.7s linear infinite' }} />
+                      Synthesizing voice...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                        <path d="M8 1L2 7h4v8h4V7h4L8 1z" />
+                      </svg>
+                      Generate Studio Audio
+                    </>
+                  )}
+                </button>
+              </div>
               {generationError && <p className="mt-3 text-right text-xs text-red-300">{generationError}</p>}
             </div>
           </div>
