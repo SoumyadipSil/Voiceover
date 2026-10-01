@@ -890,7 +890,7 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
                   {selectedModel === 'nvidia/magpie-tts-zeroshot' ? (
                     <label className="block cursor-pointer rounded-lg border border-dashed border-[#2a3147] bg-[#111520] p-3 text-xs text-[#8892aa]">
                       <span className="font-medium text-[#f0f4ff]">Reference audio sample</span>
-                      <span className="mt-1 block">Upload 3 to 10 seconds of clean speech.</span>
+                      <span className="mt-1 block">Upload up to 5 seconds of clear speech with no background noise.</span>
                       <input type="file" accept="audio/*" onChange={handleReferenceAudioChange} className="mt-3 block w-full text-xs text-[#8892aa]" />
                       {referenceAudio && <span className="mt-2 block text-[#10f0b0]">Reference sample ready</span>}
                     </label>

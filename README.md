@@ -112,8 +112,6 @@ src/
 │   ├── History.tsx          # Generation history
 │   ├── Billing.tsx          # Plans and usage
 │   └── Settings.tsx         # Account settings
-└── imports/
-    └── DESIGN.md            # Visual design reference
 ```
 
 ## Current Status
@@ -148,4 +146,4 @@ When deploying to a static host, configure a rewrite so unknown paths serve `ind
 
 ## Design References
 
-The project includes inactive Stitch/Figma design exports under `src/imports`. They are excluded from Git through `.gitignore`; the maintained implementation lives in `src/pages` and `src/components`.
+The maintained implementation lives in `src/pages` and `src/components`.
