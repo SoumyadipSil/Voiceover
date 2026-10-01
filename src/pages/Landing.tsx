@@ -729,11 +729,11 @@ export default function Landing({ onGetStarted, onLogin, isAuthed = false, onOpe
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
             {plans.map((plan) => (
               <div
                 key={plan.name}
-                className={`pricing-card ${plan.featured ? 'featured' : ''} p-6 flex flex-col gap-5 relative`}
+                className={`pricing-card ${plan.featured ? 'featured' : ''} h-full p-6 flex flex-col gap-5 relative`}
               >
                 {plan.featured && (
                   <div

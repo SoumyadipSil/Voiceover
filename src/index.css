@@ -544,14 +544,15 @@ body {
   box-shadow: 0 0 48px rgba(0, 210, 223, 0.12);
 }
 .pricing-card.featured:hover {
-  transform: translateY(-8px) scale(1.05);
+  transform: translateY(-8px);
   border-color: rgba(0, 210, 223, 0.72);
   box-shadow: 0 26px 56px rgba(0, 0, 0, 0.4), 0 0 42px rgba(0, 210, 223, 0.22);
 }
 
 @media (min-width: 1024px) {
   .pricing-card.featured {
-    transform: scale(1.035);
+    height: calc(100% + 12px);
+    align-self: center;
     z-index: 1;
   }
 }
