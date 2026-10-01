@@ -69,15 +69,6 @@ const steps = [
 
 const plans = [
   {
-    name: 'Free',
-    price: '$0',
-    period: 'forever',
-    desc: 'Try before you buy',
-    features: ['1 minute lifetime audio', '3 voice options', 'MP3 128k export', 'Personal use only'],
-    cta: 'Get Started Free',
-    featured: false,
-  },
-  {
     name: 'Starter',
     price: '$15',
     period: '/month',
@@ -738,7 +729,7 @@ export default function Landing({ onGetStarted, onLogin, isAuthed = false, onOpe
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-center">
             {plans.map((plan) => (
               <div
                 key={plan.name}

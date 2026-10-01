@@ -512,15 +512,55 @@ body {
 }
 
 .pricing-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   background: #0D0F17;
   border: 1px solid #1e2a40;
   border-radius: 16px;
-  transition: all 0.25s;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.35s ease, box-shadow 0.35s ease, background 0.35s ease;
+}
+.pricing-card::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(circle at 50% -20%, rgba(0, 210, 223, 0.16), transparent 58%);
+  content: '';
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.pricing-card:hover {
+  transform: translateY(-8px) scale(1.015);
+  border-color: rgba(0, 210, 223, 0.5);
+  background: #101925;
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.35), 0 0 32px rgba(0, 210, 223, 0.13);
+}
+.pricing-card:hover::before {
+  opacity: 1;
 }
 .pricing-card.featured {
   background: rgba(0, 210, 223, 0.06);
   border-color: rgba(0, 210, 223, 0.3);
   box-shadow: 0 0 48px rgba(0, 210, 223, 0.12);
+}
+.pricing-card.featured:hover {
+  transform: translateY(-8px) scale(1.05);
+  border-color: rgba(0, 210, 223, 0.72);
+  box-shadow: 0 26px 56px rgba(0, 0, 0, 0.4), 0 0 42px rgba(0, 210, 223, 0.22);
+}
+
+@media (min-width: 1024px) {
+  .pricing-card.featured {
+    transform: scale(1.035);
+    z-index: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pricing-card,
+  .pricing-card::before {
+    transition: none;
+  }
 }
 
 .waveform-bar {
