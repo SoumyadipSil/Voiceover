@@ -514,7 +514,7 @@ body {
 .pricing-card {
   position: relative;
   isolation: isolate;
-  overflow: hidden;
+  overflow: visible;
   background: #0D0F17;
   border: 1px solid #1e2a40;
   border-radius: 16px;

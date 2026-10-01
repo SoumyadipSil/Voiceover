@@ -737,7 +737,7 @@ export default function Landing({ onGetStarted, onLogin, isAuthed = false, onOpe
               >
                 {plan.featured && (
                   <div
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold"
+                    className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold"
                     style={{ background: '#00d2df', color: '#090A0F', whiteSpace: 'nowrap', letterSpacing: '0.04em' }}
                   >
                     MOST POPULAR
