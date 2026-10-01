@@ -4,26 +4,25 @@ interface BillingProps {
 
 const plans = [
   {
-    name: 'Free',
-    price: '$0',
-    period: 'forever',
-    description: 'Try voiceover generation for free.',
-    features: ['1 minute of audio', 'Basic voice library', 'MP3 downloads'],
-    current: true,
+    name: 'Starter',
+    price: '$15',
+    period: 'per month',
+    description: 'For occasional creators.',
+    features: ['30 minutes of audio', '15 voices in HI, EN, and BN', 'Commercial rights', 'Email support'],
   },
   {
     name: 'Creator',
-    price: '$12',
+    price: '$29',
     period: 'per month',
-    description: 'More minutes and better tools for regular creators.',
-    features: ['60 minutes of audio', 'All voices and languages', 'Priority generation', 'WAV downloads'],
+    description: 'For serious YouTube channels.',
+    features: ['180 minutes of audio', '30+ voices in all available languages', 'Priority generation', 'WAV downloads'],
   },
   {
     name: 'Studio',
-    price: '$29',
+    price: '$79',
     period: 'per month',
-    description: 'A larger allowance for teams and high-volume work.',
-    features: ['180 minutes of audio', 'Commercial usage rights', 'Fastest generation', 'Priority support'],
+    description: 'For agencies and power creators.',
+    features: ['Unlimited generation', 'All 50+ voices', 'FLAC and stems export', 'Dedicated support'],
   },
 ]
 
@@ -46,20 +45,12 @@ export default function Billing({ onUpgrade }: BillingProps) {
             className="rounded-xl p-5 flex flex-col gap-4"
             style={{
               background: '#0D0F17',
-              border: plan.current ? '1px solid rgba(0,210,223,0.45)' : '1px solid #1e2a40',
+              border: '1px solid #1e2a40',
             }}
           >
             <div>
               <div className="flex items-center justify-between gap-2">
                 <span style={{ color: '#F0F4FF', fontSize: '15px', fontWeight: 600 }}>{plan.name}</span>
-                {plan.current && (
-                  <span
-                    className="rounded-full px-2 py-1"
-                    style={{ background: 'rgba(0,210,223,0.12)', color: '#00d2df', fontSize: '10px', fontWeight: 600 }}
-                  >
-                    Current plan
-                  </span>
-                )}
               </div>
               <div className="flex items-baseline gap-1 mt-3">
                 <span style={{ color: '#F0F4FF', fontSize: '28px', fontWeight: 700 }}>{plan.price}</span>
@@ -78,11 +69,10 @@ export default function Billing({ onUpgrade }: BillingProps) {
             </div>
 
             <button
-              className={plan.current ? 'btn-ghost w-full py-2.5 rounded-xl text-sm font-medium' : 'btn-primary w-full py-2.5 rounded-xl text-sm font-semibold'}
-              onClick={plan.current ? undefined : onUpgrade}
-              disabled={plan.current}
+              className="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold"
+              onClick={onUpgrade}
             >
-              {plan.current ? 'You are here' : `Choose ${plan.name}`}
+              Choose {plan.name}
             </button>
           </div>
         ))}
