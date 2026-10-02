@@ -16,8 +16,8 @@ const voices = [
   { name: 'Priya', lang: 'Hindi · English', style: 'Fast-Paced YT', avatar: '⚡' },
   { name: 'Arjun', lang: 'Bengali', style: 'Authoritative', avatar: '📢' },
   { name: 'Meera', lang: 'Hindi · English', style: 'Calm & Soothing', avatar: '🌊' },
-  { name: 'Dev', lang: 'English (India)', style: 'Energetic Creator', avatar: '🔥' },
-  { name: 'Sia', lang: 'Bengali · Hindi', style: 'Storyteller', avatar: '✨' },
+  { name: 'Alexis', lang: 'English (US)', style: 'Flux TTS · Warm', avatar: 'A' },
+  { name: 'Gemma', lang: 'English (US)', style: 'Flux TTS · Clear', avatar: 'G' },
 ]
 
 const faqItems = [
@@ -280,7 +280,7 @@ export default function Landing({ onGetStarted, onLogin, isAuthed = false, onOpe
           }}
         >
           <span style={{ color: '#00d2df', fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            ✦ Now with Bengali & Hindi support
+            ✦ Now with 20+ languages supported
           </span>
         </div>
 
@@ -527,7 +527,7 @@ export default function Landing({ onGetStarted, onLogin, isAuthed = false, onOpe
 
           {/* Filter tabs */}
           <div className="flex items-center gap-2 mb-8 justify-center flex-wrap">
-            {['All', 'Hindi', 'Bengali', 'English (IN)'].map((f, i) => (
+            {['All', 'Hindi', 'Bengali', 'English (IN)', 'English (US)'].map((f, i) => (
               <button
                 key={f}
                 className="px-4 py-1.5 rounded-full text-sm font-medium transition-all"
@@ -541,6 +541,7 @@ export default function Landing({ onGetStarted, onLogin, isAuthed = false, onOpe
                 {f}
               </button>
             ))}
+            <span style={{ color: '#4f5a72', fontSize: '11px', letterSpacing: '0.04em' }}>36 voices available</span>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
