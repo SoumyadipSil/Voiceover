@@ -480,19 +480,11 @@ export default function Landing({ onGetStarted, onLogin, isAuthed = false, onOpe
                   animationDelay: `${i * 0.1}s`,
                 }}
               >
-                <div className="flex items-start justify-between">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center"
-                    style={{ background: 'rgba(0,210,223,0.1)', color: '#00d2df', border: '1px solid rgba(0,210,223,0.15)' }}
-                  >
-                    {step.icon}
-                  </div>
-                  <span
-                    className="font-display font-bold"
-                    style={{ fontSize: '40px', color: '#151c2e', letterSpacing: '-0.06em', lineHeight: 1 }}
-                  >
-                    {step.num}
-                  </span>
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ background: 'rgba(0,210,223,0.1)', color: '#00d2df', border: '1px solid rgba(0,210,223,0.15)' }}
+                >
+                  {step.icon}
                 </div>
                 <div>
                   <h3 style={{ color: '#F0F4FF', fontSize: '17px', fontWeight: 600, letterSpacing: '-0.02em', marginBottom: 8 }}>
