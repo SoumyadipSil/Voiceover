@@ -783,12 +783,6 @@ General Odoacer marched into Ravenna, deposing sixteen-year-old Romulus Augustul
               <button type="button" onClick={() => setShowVoicePanel(false)} className="voice-selection-close flex h-8 w-8 items-center justify-center rounded-full border border-[#dfe7f3] bg-white text-lg text-[#475569]" aria-label="Close voice selection">×</button>
             </div>
 
-            <div className="voice-selection-tabs flex items-center gap-3 border-b border-[#e5e9f2] bg-white px-5 py-4">
-              <button type="button" className="voice-selection-tab voice-selection-tab-active rounded-full border border-[#bdd5f6] bg-[#eff6ff] px-4 py-2 text-sm font-semibold text-[#1d4ed8]">Pro Voices</button>
-              <button type="button" className="voice-selection-tab rounded-full border border-[#dfe7f3] bg-[#f8fafc] px-4 py-2 text-sm font-medium text-[#475569]">Default Voices</button>
-              <button type="button" className="voice-selection-tab voice-selection-collection-tab ml-auto rounded-full border border-[#dfe7f3] bg-[#f8fafc] px-4 py-2 text-sm font-medium text-[#475569]">My Collection</button>
-            </div>
-
             <div className="voice-selection-models grid gap-2 border-b border-[#151c2e] bg-[#0a0c13] p-4 md:grid-cols-3">
               {ttsModels.map(model => (
                 <button

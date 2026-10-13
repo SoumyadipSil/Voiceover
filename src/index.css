@@ -480,13 +480,8 @@ body {
     overflow-y: auto;
   }
 
-  .voice-selection-tabs,
   .voice-selection-toolbar {
     flex-wrap: wrap;
-  }
-
-  .voice-selection-collection-tab {
-    margin-left: 0;
   }
 
   .voice-selection-toolbar {
